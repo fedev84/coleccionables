@@ -1,0 +1,24 @@
+.muted { color: var(--app-muted); }
+
+ion-button, ion-segment-button { text-transform: none; letter-spacing: 0; }
+/* Ionic pone los botones del diálogo en mayúsculas con más especificidad. */
+ion-alert button.alert-button { text-transform: none; letter-spacing: 0; }
+ion-toast::part(button) { text-transform: none; font-weight: 700; }
+
+/* Paneles de altura automática. */
+ion-modal.auto-sheet {
+  --height: auto;
+  --border-radius: 20px 20px 0 0;
+  --background: var(--app-surface);
+}
+.sheet { padding: 20px 20px calc(20px + var(--ion-safe-area-bottom, 0px)); }
+.sheet h2 { margin: 4px 0 16px; font-size: 20px; }
+
+.field {
+  --background: var(--app-surface-2);
+  --border-radius: 10px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  margin-bottom: 12px;
+}
+ion-alert.pre-line .alert-message { white-space: pre-line; }

@@ -1,0 +1,45 @@
+/* Tokens de la app. Ionic lee sus --ion-*; los nuestros van con --app-*. */
+:root {
+  --ion-font-family: system-ui, -apple-system, 'Roboto', sans-serif;
+
+  --ion-color-primary: #15803d;
+  --ion-color-primary-rgb: 21, 128, 61;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #166534;
+  --ion-color-primary-tint: #16a34a;
+
+  --ion-background-color: #f6f7f6;
+  --ion-background-color-rgb: 246, 247, 246;
+  --ion-text-color: #18181b;
+  --ion-text-color-rgb: 24, 24, 27;
+
+  --app-surface: #ffffff;
+  --app-surface-2: #eceeec;
+  --app-muted: #71717a;
+  --app-border: rgba(24, 24, 27, 0.08);
+  --app-radius: 14px;
+
+  --ion-toolbar-background: var(--ion-background-color);
+  --ion-toolbar-border-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-color-primary: #4ade80;
+    --ion-color-primary-rgb: 74, 222, 128;
+    --ion-color-primary-contrast: #052e16;
+    --ion-color-primary-shade: #22c55e;
+    --ion-color-primary-tint: #86efac;
+
+    --ion-background-color: #0e0f0e;
+    --ion-background-color-rgb: 14, 15, 14;
+    --ion-text-color: #f4f4f5;
+    --ion-text-color-rgb: 244, 244, 245;
+
+    --app-surface: #18191a;
+    --app-surface-2: #242526;
+    --app-muted: #a1a1aa;
+    --app-border: rgba(255, 255, 255, 0.08);
+  }
+}

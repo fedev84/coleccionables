@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+public/assets/sql-wasm.wasm
+android/.gradle
+android/app/build
+
+# Fotos personales para la carga inicial
+carga-inicial/
