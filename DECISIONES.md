@@ -110,3 +110,19 @@ app/container.ts = el único archivo que cablea las implementaciones
 |---|---|---|
 | 51 | El import empareja por nombre + año + versión solo contra lo que **ya había** en el teléfono, y cada ítem local una sola vez | Antes, dos camisetas iguales del mismo archivo (p. ej. dos talles) se fundían en una y se perdía la segunda. |
 | 52 | Carga inicial desde fotos: un backup JSON armado fuera de la app (`carga-inicial/`, fuera de git), con las fotos recortadas a la camiseta y lo dudoso marcado "⚠ revisar" | Reusa el import que ya existe; no hace falta código nuevo. Buscando "revisar" aparecen todas las dudosas. |
+
+## Original o réplica (2026-10-06)
+
+| # | Decisión | Por qué |
+|---|---|---|
+| 53 | "Original o réplica" es un campo fijo (`authenticity`: `original` / `replica` / sin dato), no un campo propio | Los campos propios son texto o número libre; acá hay dos opciones fijas, y como campo fijo se puede ocultar o renombrar en listas donde no aplique. Migración 4 suma la columna. |
+| 54 | En el formulario son dos botones; tocar el marcado lo desmarca | "No sé" también es válido, y no hace falta un tercer botón. |
+| 55 | La línea de info muestra solo "Réplica" | Lo original es lo esperable: repetir "Original" en cada fila es ruido. Se puede buscar "réplica"/"original" y ordenar por el campo. No va en lo que se comparte. |
+
+## Personalización (2026-10-08)
+
+| # | Decisión | Por qué |
+|---|---|---|
+| 56 | "Personalización" es un campo fijo de texto libre (`customization`), con atajos Dorsal / Parche / Firmada | Dorsal, parches y firma se combinan de mil formas ("10 Riquelme · parche Libertadores · firmada"): un texto con atajos es más simple que tres campos. Migración 5 (la 4 ya pudo haberse instalado). |
+| 57 | Los atajos se suman al final con " · "; Dorsal y Parche dejan el foco para completar, Firmada aparece una sola vez | Dorsales y parches pueden ser varios; la firma no. |
+| 58 | Se muestra en la línea de info y **sí** va en lo que se comparte; no se ordena por este campo | En "me falta" importa cuál camiseta es ("la 10 de Riquelme"). Un texto libre no tiene orden útil. |

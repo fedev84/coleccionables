@@ -1,11 +1,12 @@
 import type { ItemRepository, ItemWrite } from '@/data/ports'
 import type { Id, Item } from '@/domain/models'
+import { parseAuthenticity } from '@/domain/validation'
 import type { SqliteDb, Statement } from './SqliteDb'
 
 interface Row {
   id: string; list_id: string; name: string; status: string; year: number | null
   version: string | null; size: string | null; url: string | null; description: string | null
-  price: number | null; place: string | null; extra: string | null
+  price: number | null; place: string | null; extra: string | null; authenticity: string | null; customization: string | null
   thumb: string | null; created_at: string; updated_at: string
 }
 
@@ -26,6 +27,8 @@ const toItem = (r: Row): Item => ({
   year: r.year ?? null,
   version: r.version,
   size: r.size,
+  authenticity: parseAuthenticity(r.authenticity),
+  customization: r.customization ?? null,
   url: r.url,
   description: r.description,
   price: r.price ?? null,
@@ -38,11 +41,11 @@ const toItem = (r: Row): Item => ({
 
 const upsert = (i: Item): Statement => ({
   sql: `INSERT OR REPLACE INTO items
-    (id, list_id, name, status, year, version, size, url, description, price, place, extra, thumb, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (id, list_id, name, status, year, version, size, url, description, price, place, extra, authenticity, customization, thumb, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   values: [
     i.id, i.listId, i.name, i.status, i.year, i.version, i.size, i.url, i.description,
-    i.price, i.place, Object.keys(i.extra).length ? JSON.stringify(i.extra) : null, i.thumb, i.createdAt, i.updatedAt,
+    i.price, i.place, Object.keys(i.extra).length ? JSON.stringify(i.extra) : null, i.authenticity, i.customization, i.thumb, i.createdAt, i.updatedAt,
   ],
 })
 

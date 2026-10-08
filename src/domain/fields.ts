@@ -5,19 +5,23 @@
  */
 import { newId } from './ids'
 
-export type BuiltinField = 'year' | 'version' | 'size' | 'price' | 'place' | 'url' | 'description'
+export type BuiltinField = 'year' | 'version' | 'size' | 'authenticity' | 'customization' | 'price' | 'place' | 'url' | 'description'
 /** En este orden se muestran en el formulario y en la línea de info. */
-export const BUILTIN_FIELDS: BuiltinField[] = ['year', 'version', 'size', 'price', 'place', 'url', 'description']
+export const BUILTIN_FIELDS: BuiltinField[] = ['year', 'version', 'size', 'authenticity', 'customization', 'price', 'place', 'url', 'description']
 
 export const DEFAULT_LABELS: Record<BuiltinField, string> = {
   year: 'Año de salida',
   version: 'Versión',
   size: 'Tamaño',
+  authenticity: 'Original o réplica',
+  customization: 'Personalización',
   price: 'Precio pagado',
   place: 'Dónde lo compré',
   url: 'Link',
   description: 'Descripción corta',
 }
+
+export const AUTHENTICITY_LABELS = { original: 'Original', replica: 'Réplica' } as const
 
 export type CustomFieldType = 'text' | 'number'
 

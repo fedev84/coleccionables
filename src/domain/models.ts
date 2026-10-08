@@ -20,6 +20,8 @@ export interface Collection {
 /** have = lo tengo; want = me falta. */
 export type ItemStatus = 'have' | 'want'
 
+export type Authenticity = 'original' | 'replica'
+
 export interface Item {
   id: Id
   listId: Id
@@ -28,6 +30,9 @@ export interface Item {
   year: number | null
   version: string | null
   size: string | null
+  authenticity: Authenticity | null
+  /** Lo que se le agregó: dorsal, parches, firma… Texto libre. */
+  customization: string | null
   url: string | null
   description: string | null
   price: number | null
@@ -59,6 +64,8 @@ export interface ItemInput {
   description: string | null
   price?: string | number | null
   place?: string | null
+  authenticity?: Authenticity | null
+  customization?: string | null
   /** Por id de campo propio; llegan como texto desde los inputs. */
   extra?: Record<string, string | number>
 }

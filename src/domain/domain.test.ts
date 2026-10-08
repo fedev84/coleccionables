@@ -10,7 +10,7 @@ describe('validateItem', () => {
   it('limpia espacios y deja null lo vacío', () => {
     expect(validateItem({ ...base, name: '  Boca  ', version: ' Titular ' })).toEqual({
       name: 'Boca', status: 'have', year: null, version: 'Titular', size: null, url: null, description: null,
-      price: null, place: null, extra: {},
+      price: null, place: null, authenticity: null, customization: null, extra: {},
     })
   })
 
@@ -41,7 +41,7 @@ describe('normalizeUrl', () => {
 describe('itemLine', () => {
   const blank: Item = {
     id: '1', listId: 'l', name: 'x', status: 'have', year: null, version: null, size: null, url: null, description: null,
-    price: null, place: null, extra: {}, thumb: null, createdAt: '', updatedAt: '',
+    price: null, place: null, authenticity: null, customization: null, extra: {}, thumb: null, createdAt: '', updatedAt: '',
   }
   it('une solo lo que hay', () => {
     expect(itemLine({ ...blank, year: 2014, version: 'Titular', description: 'Con parche' })).toBe('2014 · Titular · Con parche')

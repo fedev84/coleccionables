@@ -6,7 +6,7 @@ import { DEFAULT_VIEW, applyView, matches, parseView, resolveView, sortFields } 
 let n = 0
 const item = (p: Partial<Item>): Item => ({
   id: String(++n), listId: 'l', name: 'x', status: 'have', year: null, version: null, size: null,
-  url: null, description: null, price: null, place: null, extra: {}, thumb: null,
+  url: null, description: null, price: null, place: null, authenticity: null, customization: null, extra: {}, thumb: null,
   createdAt: '2026-01-01', updatedAt: '2026-01-01', ...p,
 })
 
@@ -72,7 +72,7 @@ describe('campos nuevos y propios', () => {
   })
 
   it('ofrece ordenar solo por lo visible, y si el campo ya no está, por nombre', () => {
-    expect(sortFields(cfg)).toEqual(['name', 'year', 'version', 'price', 'place', 'x:d', 'createdAt', 'updatedAt'])
+    expect(sortFields(cfg)).toEqual(['name', 'year', 'version', 'authenticity', 'price', 'place', 'x:d', 'createdAt', 'updatedAt'])
     expect(resolveView({ ...DEFAULT_VIEW, sort: 'size', dir: 'desc' }, cfg)).toEqual({ ...DEFAULT_VIEW, sort: 'name', dir: 'asc' })
     expect(parseView('{"sort":"x:d"}').sort).toBe('x:d')
   })

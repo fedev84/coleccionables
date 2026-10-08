@@ -1,11 +1,13 @@
 /** Buscar, filtrar y ordenar ítems en memoria. Puro: se testea solo. */
 import type { Item, ItemStatus } from './models'
-import { BUILTIN_FIELDS, defaultFields, isShown, type BuiltinField, type FieldConfig } from './fields'
+import { AUTHENTICITY_LABELS, BUILTIN_FIELDS, defaultFields, isShown, type BuiltinField, type FieldConfig } from './fields'
 
 export type StatusFilter = 'all' | ItemStatus
 type BaseSortField = 'name' | 'createdAt' | 'updatedAt'
 /** Los campos propios se ordenan como `x:<id>`. */
-export type SortField = BaseSortField | Exclude<BuiltinField, 'url' | 'description'> | `x:${string}`
+/** Los textos libres (link, personalización, descripción) no tienen un orden que sirva. */
+type Unsortable = 'url' | 'customization' | 'description'
+export type SortField = BaseSortField | Exclude<BuiltinField, Unsortable> | `x:${string}`
 export type SortDir = 'asc' | 'desc'
 
 export interface ListView {
@@ -16,7 +18,8 @@ export interface ListView {
 
 export const DEFAULT_VIEW: ListView = { status: 'all', sort: 'name', dir: 'asc' }
 
-const SORTABLE_BUILTINS = BUILTIN_FIELDS.filter((f) => f !== 'url' && f !== 'description') as Exclude<BuiltinField, 'url' | 'description'>[]
+const UNSORTABLE: BuiltinField[] = ['url', 'customization', 'description']
+const SORTABLE_BUILTINS = BUILTIN_FIELDS.filter((f) => !UNSORTABLE.includes(f)) as Exclude<BuiltinField, Unsortable>[]
 
 /** Por qué se puede ordenar en una lista: nombre, sus campos visibles, sus campos propios y las fechas. */
 export function sortFields(cfg: FieldConfig): SortField[] {
@@ -40,7 +43,7 @@ export const defaultDir = (f: SortField): SortDir => (f === 'createdAt' || f ===
 export const fold = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 const haystack = (i: Item) =>
-  fold([i.name, i.description, i.version, i.size, i.year, i.place, i.price, ...Object.values(i.extra)].filter((v) => v != null).join(' '))
+  fold([i.name, i.description, i.version, i.size, i.authenticity && AUTHENTICITY_LABELS[i.authenticity], i.customization, i.year, i.place, i.price, ...Object.values(i.extra)].filter((v) => v != null).join(' '))
 
 /** Cada palabra buscada tiene que aparecer en algún campo, en cualquier orden. */
 export function matches(item: Item, text: string): boolean {

@@ -54,4 +54,16 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       ALTER TABLE items ADD COLUMN extra TEXT;
     `,
   },
+  {
+    version: 4,
+    sql: `
+      ALTER TABLE items ADD COLUMN authenticity TEXT;
+    `,
+  },
+  {
+    version: 5,
+    sql: `
+      ALTER TABLE items ADD COLUMN customization TEXT;
+    `,
+  },
 ]

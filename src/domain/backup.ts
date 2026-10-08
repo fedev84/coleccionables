@@ -5,10 +5,10 @@
  * Ejemplo mínimo válido, escrito a mano:
  *   { "lists": [{ "name": "Camisetas", "items": [{ "name": "Boca 2014", "year": 2014 }] }] }
  */
-import type { Collection, Id, Item, ItemStatus } from './models'
+import type { Authenticity, Collection, Id, Item, ItemStatus } from './models'
 import { newId, nowIso } from './ids'
 import { parseFields, type FieldConfig } from './fields'
-import { normalizeUrl, parsePrice, parseYear } from './validation'
+import { normalizeUrl, parseAuthenticity, parsePrice, parseYear } from './validation'
 
 export const BACKUP_APP = 'coleccion'
 export const BACKUP_VERSION = 1
@@ -20,6 +20,10 @@ export interface BackupItem {
   year: number | null
   version: string | null
   size: string | null
+  /** "original" o "replica"; null = sin dato. */
+  authenticity: Authenticity | null
+  /** Dorsal, parches, firma… */
+  customization: string | null
   url: string | null
   description: string | null
   price: number | null
@@ -153,6 +157,8 @@ export function parseBackup(text: string): ParsedList[] {
           year: safe(() => parseYear(i.year as string | number | null)),
           version: str(i.version),
           size: str(i.size),
+          authenticity: parseAuthenticity(i.authenticity),
+          customization: str(i.customization),
           url: safe(() => normalizeUrl(str(i.url))),
           description: str(i.description),
           price: safe(() => parsePrice(i.price as string | number | null)),

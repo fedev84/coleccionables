@@ -11,9 +11,9 @@ export function shareTitle(list: Collection, n: number, status: ItemStatus): str
     : `${list.emoji} ${list.name}: tengo ${n}`
 }
 
-/** "2009 · Alternativa · L": solo año, versión y tamaño, si la lista los muestra. */
+/** "2009 · Alternativa · L · 10 Riquelme": año, versión, tamaño y personalización, si la lista los muestra. */
 export function shareInfo(list: Collection, item: Item): string {
-  return (['year', 'version', 'size'] as const)
+  return (['year', 'version', 'size', 'customization'] as const)
     .filter((f) => isShown(list.fields, f))
     .map((f) => item[f])
     .filter((v) => v != null && v !== '')

@@ -5,11 +5,12 @@ import {
 } from '@ionic/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { services } from '@/app/container'
-import type { Collection, Item, ItemStatus, Photo } from '@/domain/models'
-import { isDefaultLabel, isShown, labelOf } from '@/domain/fields'
+import type { Authenticity, Collection, Item, ItemStatus, Photo } from '@/domain/models'
+import { AUTHENTICITY_LABELS, isDefaultLabel, isShown, labelOf } from '@/domain/fields'
 import { BASE_SIZES, BASE_VERSIONS, suggest } from '@/domain/suggestions'
 import { ValidationError, normalizeUrl } from '@/domain/validation'
 import { formatNumber } from '@/domain/numbers'
+import { fold } from '@/domain/query'
 import { pickPhoto, type PhotoSource } from '@/platform/photos'
 import { toast } from '@/platform/toast'
 import { useItemsStore } from '@/stores/items'
@@ -23,6 +24,8 @@ const emit = defineEmits<{ close: [] }>()
 const items = useItemsStore()
 const form = reactive({
   name: '', status: 'have' as ItemStatus, year: '', version: '', size: '', price: '', place: '', url: '', description: '',
+  authenticity: null as Authenticity | null,
+  customization: '',
   extra: {} as Record<string, string>,
 })
 const errors = reactive<Record<string, string>>({})
@@ -34,6 +37,7 @@ const duplicated = ref(false)
 const photo = ref<Photo | null | undefined>(undefined)
 const viewer = reactive({ open: false, src: null as string | null })
 const nameInput = ref<InstanceType<typeof IonInput>>()
+const customizationInput = ref<InstanceType<typeof IonInput>>()
 
 const cfg = computed(() => props.list.fields)
 const show = (f: Parameters<typeof isShown>[1]) => isShown(cfg.value, f)
@@ -54,6 +58,8 @@ watch(
       size: i?.size ?? '',
       price: i?.price != null ? formatNumber(i.price) : '',
       place: i?.place ?? '',
+      authenticity: i?.authenticity ?? null,
+      customization: i?.customization ?? '',
       url: i?.url ?? '',
       description: i?.description ?? '',
       extra: Object.fromEntries(props.list.fields.custom.map((f) => {
@@ -71,6 +77,12 @@ const thumb = computed(() => (photo.value === undefined ? (editing.value?.thumb 
 // Las sugerencias de camisetas solo si el campo conserva su nombre de fábrica.
 const versions = computed(() => suggest(items.used.version, isDefaultLabel(cfg.value, 'version') ? BASE_VERSIONS : [], form.version))
 const sizes = computed(() => suggest(items.used.size, isDefaultLabel(cfg.value, 'size') ? BASE_SIZES : [], form.size))
+/** Atajos de personalización (solo con el nombre de fábrica). "Firmada" una sola vez; dorsales y parches pueden ser varios. */
+const customizationChips = computed(() =>
+  isDefaultLabel(cfg.value, 'customization')
+    ? t.item.customizationChips.filter((c) => c !== 'Firmada' || !fold(form.customization).includes('firmada'))
+    : [],
+)
 const places = computed(() => (form.place ? [] : items.used.place.slice(0, 6)))
 /** El link listo para abrir, si es válido. */
 const openableUrl = computed(() => {
@@ -136,6 +148,17 @@ async function save() {
     saving.value = false
   }
 }
+
+/** Suma el atajo al final. "Dorsal" y "Parche" quedan para completar, con el foco en el campo. */
+function addCustomization(chip: string) {
+  const current = form.customization.trim()
+  const complete = chip === 'Firmada'
+  form.customization = `${current ? `${current} · ` : ''}${chip}${complete ? '' : ' '}`
+  if (!complete) (customizationInput.value?.$el as HTMLIonInputElement | undefined)?.setFocus()
+}
+
+/** Tocar la opción marcada la desmarca: "sin dato" también es una respuesta válida. */
+const toggleAuthenticity = (v: Authenticity) => { form.authenticity = form.authenticity === v ? null : v }
 
 const focusName = () => !props.item && (nameInput.value?.$el as HTMLIonInputElement | undefined)?.setFocus()
 const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field] })
@@ -207,6 +230,37 @@ const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field]
           <ion-input v-model="form.size" class="field" fill="solid" :label="label('size')" label-placement="stacked" :placeholder="isDefaultLabel(cfg, 'size') ? t.item.sizePh : ''" autocapitalize="characters" />
           <div v-if="sizes.length" class="chips">
             <button v-for="s in sizes" :key="s" type="button" class="chip" @click="form.size = s">{{ s }}</button>
+          </div>
+        </template>
+
+        <div v-if="show('authenticity')" class="choice" role="group" :aria-label="label('authenticity')">
+          <span class="choice-label">{{ label('authenticity') }}</span>
+          <div class="chips">
+            <button
+              v-for="(text, v) in AUTHENTICITY_LABELS"
+              :key="v"
+              type="button"
+              class="chip"
+              :class="{ on: form.authenticity === v }"
+              :aria-pressed="form.authenticity === v"
+              @click="toggleAuthenticity(v)"
+            >{{ text }}</button>
+          </div>
+        </div>
+
+        <template v-if="show('customization')">
+          <ion-input
+            ref="customizationInput"
+            v-model="form.customization"
+            class="field"
+            fill="solid"
+            :label="label('customization')"
+            label-placement="stacked"
+            :placeholder="isDefaultLabel(cfg, 'customization') ? t.item.customizationPh : ''"
+            autocapitalize="sentences"
+          />
+          <div v-if="customizationChips.length" class="chips">
+            <button v-for="c in customizationChips" :key="c" type="button" class="chip" @click="addCustomization(c)">{{ c }}</button>
           </div>
         </template>
 
@@ -306,6 +360,15 @@ const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field]
   border-radius: 999px;
   font-size: 14px;
 }
+.chip.on {
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-weight: 600;
+}
+.choice { margin: 0 0 14px; }
+.choice-label { display: block; margin: 0 0 8px 4px; font-size: 13px; color: var(--app-muted); }
+.choice .chips { margin: 0; }
 .url { position: relative; }
 .open {
   position: absolute;

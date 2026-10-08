@@ -2,11 +2,12 @@
 import type { Collection, Item } from './models'
 import { groupByList, sortLists } from './backup'
 import { formatNumber } from './numbers'
+import { AUTHENTICITY_LABELS } from './fields'
 
 /** Punto y coma: el Excel en español usa la coma para decimales y no separa columnas con coma. */
 const SEP = ';'
 /** Columnas fijas (las listas pueden tener otros nombres): los campos propios van juntos en "Otros". */
-const HEADERS = ['Lista', 'Nombre', 'Estado', 'Año', 'Versión', 'Tamaño', 'Precio', 'Dónde', 'Link', 'Descripción', 'Otros', 'Cargado', 'Editado']
+const HEADERS = ['Lista', 'Nombre', 'Estado', 'Año', 'Versión', 'Tamaño', 'Original o réplica', 'Personalización', 'Precio', 'Dónde', 'Link', 'Descripción', 'Otros', 'Cargado', 'Editado']
 
 const cell = (v: string | number | null) => {
   const s = v == null ? '' : String(v)
@@ -20,6 +21,7 @@ export function buildCsv(lists: Collection[], items: Item[]): string {
   const rows = sortLists(lists).flatMap((l) =>
     (byList.get(l.id) ?? []).map((i) => [
       l.name, i.name, i.status === 'want' ? 'Me falta' : 'Tengo', i.year, i.version, i.size,
+      i.authenticity && AUTHENTICITY_LABELS[i.authenticity], i.customization,
       // El precio con coma decimal, como lo lee el Excel en español.
       i.price != null ? String(i.price).replace('.', ',') : null, i.place, i.url, i.description,
       l.fields.custom

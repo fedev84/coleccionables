@@ -1,5 +1,5 @@
 import type { CustomField } from './fields'
-import type { ItemInput, NewCollectionInput } from './models'
+import type { Authenticity, ItemInput, NewCollectionInput } from './models'
 import { parseNumber } from './numbers'
 
 export class ValidationError extends Error {
@@ -50,12 +50,21 @@ export function parsePrice(raw: string | number | null | undefined): number | nu
   return n
 }
 
+/** "Réplica", "replica" o "REPLICA" valen igual; cualquier otra cosa es "sin dato". */
+export function parseAuthenticity(raw: unknown): Authenticity | null {
+  if (typeof raw !== 'string') return null
+  const v = raw.trim().toLowerCase().replace('é', 'e')
+  return v === 'original' || v === 'replica' ? v : null
+}
+
 export interface CleanItem {
   name: string
   status: ItemInput['status']
   year: number | null
   version: string | null
   size: string | null
+  authenticity: Authenticity | null
+  customization: string | null
   url: string | null
   description: string | null
   price: number | null
@@ -89,6 +98,8 @@ export function validateItem(input: ItemInput, custom: CustomField[] = []): Clea
     year: parseYear(input.year),
     version: clean(input.version),
     size: clean(input.size),
+    authenticity: parseAuthenticity(input.authenticity),
+    customization: clean(input.customization),
     url: normalizeUrl(input.url),
     description: clean(input.description),
     price: parsePrice(input.price),

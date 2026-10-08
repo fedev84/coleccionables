@@ -17,7 +17,7 @@ export function sortName(f: SortField, cfg: FieldConfig): string {
 export function dirName(f: SortField, cfg: FieldConfig, dir: SortDir): string {
   const kind =
     f === 'createdAt' || f === 'updatedAt' ? 'date'
-    : f === 'year' || f === 'size' || f === 'price' ? f
+    : f === 'year' || f === 'size' || f === 'price' || f === 'authenticity' ? f
     : customOf(f, cfg)?.type === 'number' ? 'number'
     : 'text'
   return t.sortDir[kind][dir]

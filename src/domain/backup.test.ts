@@ -7,7 +7,7 @@ import { defaultFields } from './fields'
 const list: Collection = { id: 'L1', name: 'Camisetas', emoji: '👕', fields: defaultFields(), sortOrder: 0, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
 const boca: Item = {
   id: 'I1', listId: 'L1', name: 'Boca', status: 'have', year: 2014, version: 'Titular', size: 'L', url: null,
-  description: 'Con "parche"; firmada', price: 25000.5, place: 'Feria', extra: {}, thumb: 'data:image/jpeg;base64,T', createdAt: '2026-01-02T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z',
+  description: 'Con "parche"; firmada', price: 25000.5, place: 'Feria', authenticity: 'replica', customization: '10 Riquelme', extra: {}, thumb: 'data:image/jpeg;base64,T', createdAt: '2026-01-02T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z',
 }
 const photos = new Map([['I1', 'data:image/jpeg;base64,FULL']])
 const roundTrip = (withPhotos: boolean) => parseBackup(serializeBackup(buildBackup([list], [boca], withPhotos ? photos : null)))
@@ -16,7 +16,7 @@ describe('backup', () => {
   it('con fotos ida y vuelta conserva todo', () => {
     const [l] = roundTrip(true)
     expect(l).toMatchObject({ id: 'L1', name: 'Camisetas' })
-    expect(l.items[0]).toMatchObject({ id: 'I1', name: 'Boca', year: 2014, price: 25000.5, place: 'Feria', thumb: boca.thumb, photo: 'data:image/jpeg;base64,FULL' })
+    expect(l.items[0]).toMatchObject({ id: 'I1', name: 'Boca', year: 2014, authenticity: 'replica', customization: '10 Riquelme', price: 25000.5, place: 'Feria', thumb: boca.thumb, photo: 'data:image/jpeg;base64,FULL' })
   })
 
   it('sin fotos no lleva imágenes', () => {
@@ -87,6 +87,11 @@ describe('planImport', () => {
     expect(l.items[0]).toMatchObject({ price: 25000, place: 'Feria', extra: { d: 10, f: 'ok' } })
   })
 
+  it('original o réplica: tolera tildes y mayúsculas, y descarta lo desconocido', () => {
+    const [l] = parseBackup('{"lists":[{"name":"X","items":[{"name":"A","authenticity":"Réplica"},{"name":"B","authenticity":" ORIGINAL "},{"name":"C","authenticity":"trucha"},{"name":"D"}]}]}')
+    expect(l.items.map((i) => i.authenticity)).toEqual(['replica', 'original', null, null])
+  })
+
   it('una lista nueva va al final', () => {
     const plan = planImport(parseBackup('{"lists":[{"name":"Figuritas"}]}'), [list], [])
     expect(plan.lists[0]).toMatchObject({ name: 'Figuritas', sortOrder: 1 })
@@ -97,6 +102,6 @@ describe('buildCsv', () => {
   it('escapa comillas y separadores, con BOM', () => {
     const csv = buildCsv([list], [boca])
     expect(csv.startsWith('﻿Lista;Nombre;Estado')).toBe(true)
-    expect(csv).toContain('Camisetas;Boca;Tengo;2014;Titular;L;25000,5;Feria;;"Con ""parche""; firmada";;2026-01-02;2026-01-02')
+    expect(csv).toContain('Camisetas;Boca;Tengo;2014;Titular;L;Réplica;10 Riquelme;25000,5;Feria;;"Con ""parche""; firmada";;2026-01-02;2026-01-02')
   })
 })
