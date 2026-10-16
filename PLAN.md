@@ -6,18 +6,23 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 
 **Lista**: nombre, emoji (opcional), orden en el home.
 
-**Ítem** (los mismos campos en todas las listas):
+**Ítem**: nombre y estado siempre; el resto son campos fijos que cada lista puede ocultar o renombrar, más campos propios (texto o número) en "Campos de la lista".
 
 | Campo | Tipo | Nota |
 |---|---|---|
 | Nombre | texto, **obligatorio** | Lo que se ve en negrita en la lista |
 | Estado | **Tengo / Me falta** | Pasar de "falta" a "tengo" con un toque |
-| Foto | imagen comprimida | Cámara o galería |
+| Foto | imagen comprimida | Cámara o galería; grande aparte + miniatura para la lista |
 | Año de salida | número | |
 | Versión | texto + sugerencias | Titular, Suplente, Alternativa, Arquero, Retro… |
 | Tamaño | texto + sugerencias | S, M, L, XL… (texto libre por si es otra cosa) |
+| Original o réplica | `original` / `replica` / sin dato | Dos botones; en la lista solo se marca "Réplica" |
+| Personalización | texto + atajos | Dorsal, parches, firma ("Dorsal 10 · Firmada") |
+| Precio pagado | número | Acepta "25.000" o "1.234,50" |
+| Dónde lo compré | texto + sugerencias | |
 | URL | link | Se normaliza (`sitio.com` → `https://sitio.com`) |
 | Descripción corta | texto | |
+| Campos propios | texto o número | Por lista, en el orden que elijas |
 
 **Fila de lista**: miniatura a la izquierda · nombre · una línea con todo lo demás:
 `2014 · Titular · L · Copa del Mundo, con parche` + marca "Falta" si corresponde.
