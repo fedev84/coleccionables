@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import {
   IonBackButton, IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonLabel, IonList,
-  IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, actionSheetController, useIonRouter,
+  IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, actionSheetController, alertController,
+  useBackButton, useIonRouter,
 } from '@ionic/vue'
-import { add, ellipsisVertical, swapVerticalOutline } from 'ionicons/icons'
+import { add, close, ellipsisVertical, swapVerticalOutline } from 'ionicons/icons'
 import { computed, reactive, ref, watchEffect } from 'vue'
 import { services } from '@/app/container'
-import type { Collection, Item, ItemStatus } from '@/domain/models'
+import type { Collection, Id, Item, ItemStatus } from '@/domain/models'
 import { applyView, defaultDir, resolveView, sortFields, type SortField, type StatusFilter } from '@/domain/query'
 import { shareText as buildShareText } from '@/domain/shareText'
 import { defaultFields } from '@/domain/fields'
@@ -46,6 +47,84 @@ const sortLabel = computed(() => `${sortName(view.value.sort, fields.value)} (${
 const itemSheet = reactive({ open: false, item: null as Item | null })
 const listSheet = ref(false)
 const viewer = reactive({ open: false, src: null as string | null, title: '' })
+
+// ---------- Elegir varios y moverlos a otra lista ----------
+const selecting = ref(false)
+const selected = ref(new Set<Id>())
+const allShownSelected = computed(() => rows.value.length > 0 && rows.value.every((i) => selected.value.has(i.id)))
+
+function startSelecting(item?: Item) {
+  selecting.value = true
+  selected.value = new Set(item ? [item.id] : [])
+  if (!item) toast(t.select.hint)
+}
+
+function stopSelecting() {
+  selecting.value = false
+  selected.value = new Set()
+}
+
+function toggleSelected(item: Item) {
+  if (!selecting.value) return startSelecting(item)
+  const next = new Set(selected.value)
+  if (!next.delete(item.id)) next.add(item.id)
+  selected.value = next
+}
+
+const toggleAll = () => { selected.value = allShownSelected.value ? new Set() : new Set(rows.value.map((i) => i.id)) }
+
+// El botón "atrás" de Android sale del modo elegir en vez de salir de la lista.
+useBackButton(10, (next) => (selecting.value ? stopSelecting() : next()))
+
+async function moveMenu() {
+  const from = list.value
+  const moving = all.value.filter((i) => selected.value.has(i.id))
+  if (!from || !moving.length) return
+  const sheet = await actionSheetController.create({
+    header: t.select.moveTo(moving.length),
+    buttons: [
+      ...lists.lists.filter((l) => l.id !== from.id).map((l) => ({
+        text: `${l.emoji} ${l.name}`,
+        handler: () => { moveTo(moving, from, l) },
+      })),
+      { text: t.select.newList, handler: () => { moveToNewList(moving, from) } },
+      { text: t.common.cancel, role: 'cancel' },
+    ],
+  })
+  await sheet.present()
+}
+
+/** Lista nueva con el mismo ícono y los mismos campos que esta: lo típico es partir una lista en dos. */
+async function moveToNewList(moving: Item[], from: Collection) {
+  const alert = await alertController.create({
+    header: t.select.newListTitle,
+    inputs: [{ name: 'name', placeholder: t.listForm.namePh, attributes: { autocapitalize: 'sentences', maxlength: 40 } }],
+    buttons: [{ text: t.common.cancel, role: 'cancel' }, { text: t.select.move, role: 'confirm' }],
+  })
+  await alert.present()
+  const { role, data } = await alert.onDidDismiss()
+  const name = String(data?.values?.name ?? '').trim()
+  if (role !== 'confirm' || !name) return
+  try {
+    const created = await lists.create({ name, emoji: from.emoji })
+    await lists.update(created.id, { fields: from.fields })
+    await moveTo(moving, from, { ...created, fields: from.fields })
+  } catch (e) {
+    console.error(e)
+    toast(t.select.error)
+  }
+}
+
+async function moveTo(moving: Item[], from: Collection, to: Collection) {
+  try {
+    const snapshot = await items.move(moving, from, to)
+    stopSelecting()
+    toast(t.select.moved(snapshot.items.length, `${to.emoji} ${to.name}`), () => items.undoMove(snapshot))
+  } catch (e) {
+    console.error(e)
+    toast(t.select.error)
+  }
+}
 
 watchEffect(() => {
   items.load(props.id)
@@ -91,6 +170,7 @@ async function listMenu() {
     buttons: [
       { text: t.list.shareWant, handler: () => { share('want') } },
       { text: t.list.shareHave, handler: () => { share('have') } },
+      ...(all.value.length ? [{ text: t.select.menu, handler: () => { startSelecting() } }] : []),
       { text: t.list.edit, handler: () => { listSheet.value = true } },
       { text: t.list.fields, handler: () => { router.push(`/lists/${l.id}/fields`) } },
       { text: t.list.delete, role: 'destructive', handler: () => { confirmDelete() } },
@@ -156,7 +236,17 @@ async function confirmDelete() {
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
+      <ion-toolbar v-if="selecting">
+        <ion-buttons slot="start">
+          <ion-button :aria-label="t.common.close" @click="stopSelecting"><ion-icon slot="icon-only" :icon="close" /></ion-button>
+        </ion-buttons>
+        <ion-title>{{ t.select.title(selected.size) }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="toggleAll">{{ allShownSelected ? t.select.none : t.select.all }}</ion-button>
+          <ion-button strong :disabled="!selected.size" @click="moveMenu">{{ t.select.move }}</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+      <ion-toolbar v-else>
         <ion-buttons slot="start"><ion-back-button default-href="/" text="" /></ion-buttons>
         <ion-title v-if="list">{{ list.emoji }} {{ list.name }}</ion-title>
         <ion-buttons slot="end">
@@ -189,6 +279,9 @@ async function confirmDelete() {
             :item="i"
             :fallback="list.emoji"
             :fields="list.fields"
+            :selecting="selecting"
+            :selected="selected.has(i.id)"
+            @select="toggleSelected(i)"
             @open="openItem(i)"
             @photo="showPhoto(i)"
             @toggle="toggle(i)"
@@ -200,7 +293,7 @@ async function confirmDelete() {
       <EmptyState v-else-if="all.length" emoji="🔍" v-bind="t.list.noResults" />
       <EmptyState v-else :emoji="list.emoji" v-bind="t.list.empty" />
 
-      <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab v-if="!selecting" slot="fixed" vertical="bottom" horizontal="end">
         <ion-fab-button aria-label="Agregar" @click="openItem(null)"><ion-icon :icon="add" /></ion-fab-button>
       </ion-fab>
 

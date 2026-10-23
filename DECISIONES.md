@@ -126,3 +126,13 @@ app/container.ts = el único archivo que cablea las implementaciones
 | 56 | "Personalización" es un campo fijo de texto libre (`customization`), con atajos Dorsal / Parche / Firmada | Dorsal, parches y firma se combinan de mil formas ("10 Riquelme · parche Libertadores · firmada"): un texto con atajos es más simple que tres campos. Migración 5 (la 4 ya pudo haberse instalado). |
 | 57 | Los atajos se suman al final con " · "; Dorsal y Parche dejan el foco para completar, Firmada aparece una sola vez | Dorsales y parches pueden ser varios; la firma no. |
 | 58 | Se muestra en la línea de info y **sí** va en lo que se comparte; no se ordena por este campo | En "me falta" importa cuál camiseta es ("la 10 de Riquelme"). Un texto libre no tiene orden útil. |
+
+## Ícono de lista y mover ítems (2026-10-23)
+
+| # | Decisión | Por qué |
+|---|---|---|
+| 59 | Ícono de lista: 24 emojis a mano + "Otro" para escribir o pegar cualquier emoji del teclado | Una grilla fija nunca alcanza; el teclado del teléfono ya tiene todos. Se valida que sea **un solo** emoji (banderas y tonos de piel incluidos). Sin fotos como ícono: más peso y más pantallas por poco. |
+| 60 | Mover ítems con un modo "elegir varios": mantener apretado un ítem, o ⋮ → "Mover a otra lista" | Lo típico es partir una lista (p. ej. sacar las de Boca de Camisetas): de a uno sería eterno. Con la búsqueda + "Todos" se eligen en dos toques. |
+| 61 | Destino: otra lista o "＋ Lista nueva", que copia el ícono y los campos de la lista de origen | Partir una lista en dos no debería obligar a configurarla de nuevo. |
+| 62 | Los campos propios con datos viajan: si el destino tiene uno con el mismo nombre y tipo, el dato pasa a ese; si no, el campo se suma al destino | Si no, el dato quedaría guardado pero invisible. Misma idea que el import (#51). |
+| 63 | Mover se puede deshacer (vuelven los ítems y los campos que tenía el destino); la foto no se toca | La foto está guardada por id de ítem, no por lista. |

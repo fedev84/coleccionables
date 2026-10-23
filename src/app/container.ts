@@ -26,7 +26,7 @@ export async function createContainer(): Promise<Container> {
   const itemRepo = new SqliteItemRepository(db)
   container = {
     lists: new CollectionService(listRepo),
-    items: new ItemService(itemRepo),
+    items: new ItemService(itemRepo, listRepo),
     backup: new BackupService(listRepo, itemRepo),
     meta: new SqliteMetaRepository(db),
   }

@@ -1,13 +1,22 @@
-import type { ItemRepository } from '@/data/ports'
+import type { CollectionRepository, ItemRepository } from '@/data/ports'
 import type { Collection, Id, Item, ItemInput, ItemSnapshot, ItemStatus, Photo } from '@/domain/models'
 import { newId, nowIso } from '@/domain/ids'
 import { validateItem } from '@/domain/validation'
+import { planMove } from '@/domain/move'
+import type { FieldConfig } from '@/domain/fields'
 
 /** `photo`: undefined = no cambia, null = se saca, Photo = foto nueva. */
 export type PhotoChange = Photo | null | undefined
 
+/** Para "Deshacer" una mudanza: los ítems como estaban y los campos que tenía la lista destino. */
+export interface MoveSnapshot {
+  items: Item[]
+  to: Id
+  fields: FieldConfig | null
+}
+
 export class ItemService {
-  constructor(private items: ItemRepository) {}
+  constructor(private items: ItemRepository, private lists: CollectionRepository) {}
 
   all() {
     return this.items.all()
@@ -61,6 +70,21 @@ export class ItemService {
 
   restore({ item, photo }: ItemSnapshot) {
     return this.items.save(item, photo)
+  }
+
+  /** Pasa los ítems a otra lista, con su foto. Los campos propios con datos se suman a la lista destino. */
+  async move(items: Item[], from: Collection, to: Collection): Promise<MoveSnapshot> {
+    const ts = nowIso()
+    const plan = planMove(items, from, to, ts)
+    if (plan.fields) await this.lists.update(to.id, { fields: plan.fields, updatedAt: ts })
+    await this.items.saveMany(plan.items.map((item) => ({ item })))
+    const moved = new Set(plan.items.map((i) => i.id))
+    return { items: items.filter((i) => moved.has(i.id)), to: to.id, fields: plan.fields ? to.fields : null }
+  }
+
+  async undoMove({ items, to, fields }: MoveSnapshot) {
+    await this.items.saveMany(items.map((item) => ({ item })))
+    if (fields) await this.lists.update(to, { fields, updatedAt: nowIso() })
   }
 
   usedValues(field: 'version' | 'size' | 'place', listId: Id) {

@@ -77,6 +77,8 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 - **Compartir como imagen** ✅ (2026-10-05): "Compartir lo que me falta / tengo" pregunta *Como texto* o *Como imagen (con fotos)*. Probado en el emulador.
 - **Original o réplica** ✅ (2026-10-06): campo fijo con dos botones; en la lista se marca solo la réplica.
 - **Personalización** ✅ (2026-10-08): texto libre con atajos Dorsal / Parche / Firmada; va en la línea de info y en lo que se comparte.
+- **Ícono de lista libre** ✅ (2026-10-23): 24 emojis + "Otro" (cualquier emoji del teclado).
+- **Mover ítems a otra lista** ✅ (2026-10-23): mantener apretado (o ⋮ → "Mover a otra lista"), elegir varios o "Todos", y mandarlos a otra lista o a una nueva. Con "Deshacer".
 
 ## Ideas para después (no se hacen salvo que lo pidas)
 - Elegir qué incluir en la imagen (por ejemplo, sumar el precio).

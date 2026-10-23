@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IonIcon, IonItem, IonItemOption, IonItemOptions, IonItemSliding } from '@ionic/vue'
-import { checkmarkCircleOutline, linkOutline, searchOutline, trashOutline } from 'ionicons/icons'
+import { checkmarkCircle, checkmarkCircleOutline, ellipseOutline, linkOutline, searchOutline, trashOutline } from 'ionicons/icons'
 import { computed, ref } from 'vue'
 import type { Item } from '@/domain/models'
 import { itemLine } from '@/domain/itemLine'
@@ -8,13 +8,44 @@ import { isShown, type FieldConfig } from '@/domain/fields'
 import { t } from '@/copy/es'
 import Thumb from './Thumb.vue'
 
-/** `context`: va antes de la línea de info (en la búsqueda global, la lista del ítem). */
-const props = defineProps<{ item: Item; fallback: string; fields: FieldConfig; context?: string }>()
-const emit = defineEmits<{ open: []; photo: []; toggle: []; remove: [] }>()
+/**
+ * `context`: va antes de la línea de info (en la búsqueda global, la lista del ítem).
+ * `selecting`: modo elegir varios; tocar la fila (o la foto) la elige, sin swipes.
+ */
+const props = defineProps<{ item: Item; fallback: string; fields: FieldConfig; context?: string; selecting?: boolean; selected?: boolean }>()
+const emit = defineEmits<{ open: []; photo: []; toggle: []; remove: []; select: [] }>()
 const sliding = ref<InstanceType<typeof IonItemSliding>>()
 const line = computed(() => [props.context, itemLine(props.item, props.fields)].filter(Boolean).join(' · '))
 const want = computed(() => props.item.status === 'want')
 const hasUrl = computed(() => !!props.item.url && isShown(props.fields, 'url'))
+
+/** Mantener apretado = empezar a elegir. Si el dedo se mueve (scroll o swipe), no cuenta. */
+const LONG_PRESS_MS = 450
+let timer: ReturnType<typeof setTimeout> | undefined
+let start = { x: 0, y: 0 }
+let longPressed = false
+
+function down(e: PointerEvent) {
+  longPressed = false
+  start = { x: e.clientX, y: e.clientY }
+  clearTimeout(timer)
+  timer = setTimeout(() => {
+    longPressed = true
+    emit('select')
+  }, LONG_PRESS_MS)
+}
+function move(e: PointerEvent) {
+  if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) clearTimeout(timer)
+}
+const cancel = () => clearTimeout(timer)
+
+/** El click que sigue a mantener apretado no abre el ítem ni la foto. */
+function tap(action: 'open' | 'photo') {
+  if (longPressed) longPressed = false
+  else if (props.selecting) emit('select')
+  else if (action === 'open') emit('open')
+  else emit('photo')
+}
 
 async function act(fn: () => void) {
   await (sliding.value?.$el as HTMLIonItemSlidingElement | undefined)?.close()
@@ -23,7 +54,7 @@ async function act(fn: () => void) {
 </script>
 
 <template>
-  <ion-item-sliding ref="sliding">
+  <ion-item-sliding ref="sliding" :disabled="selecting">
     <ion-item-options side="start" @ion-swipe="act(() => emit('toggle'))">
       <ion-item-option :color="want ? 'success' : 'medium'" expandable @click="act(() => emit('toggle'))">
         <ion-icon slot="start" :icon="want ? checkmarkCircleOutline : searchOutline" />
@@ -31,8 +62,20 @@ async function act(fn: () => void) {
       </ion-item-option>
     </ion-item-options>
 
-    <ion-item class="row" :class="{ want }" :detail="false" button @click="emit('open')">
-      <button slot="start" class="photo-btn" :disabled="!item.thumb" :aria-label="t.photo.view" @click.stop="emit('photo')">
+    <ion-item
+      class="row"
+      :class="{ want, selected }"
+      :detail="false"
+      button
+      @click="tap('open')"
+      @pointerdown="down"
+      @pointermove="move"
+      @pointerup="cancel"
+      @pointercancel="cancel"
+      @pointerleave="cancel"
+      @contextmenu.prevent
+    >
+      <button slot="start" class="photo-btn" :disabled="!item.thumb && !selecting" :aria-label="t.photo.view" @click.stop="tap('photo')">
         <Thumb :src="item.thumb" :fallback="fallback" />
       </button>
       <div class="body">
@@ -44,6 +87,14 @@ async function act(fn: () => void) {
           <ion-icon v-if="hasUrl" :icon="linkOutline" class="link" />{{ line }}
         </div>
       </div>
+      <ion-icon
+        v-if="selecting"
+        slot="end"
+        class="check"
+        :class="{ on: selected }"
+        :icon="selected ? checkmarkCircle : ellipseOutline"
+        :aria-label="selected ? t.select.selected : t.select.notSelected"
+      />
     </ion-item>
 
     <ion-item-options side="end" @ion-swipe="act(() => emit('remove'))">
@@ -74,4 +125,7 @@ async function act(fn: () => void) {
 }
 .line { font-size: 14px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link { vertical-align: -2px; margin-right: 4px; }
+.check { font-size: 26px; color: var(--app-muted); margin-left: 8px; }
+.check.on { color: var(--ion-color-primary); }
+.selected { --background: rgba(var(--ion-color-primary-rgb), 0.1); }
 </style>

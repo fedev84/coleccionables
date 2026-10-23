@@ -1,6 +1,7 @@
 import type { CustomField } from './fields'
 import type { Authenticity, ItemInput, NewCollectionInput } from './models'
 import { parseNumber } from './numbers'
+import { isEmoji } from './suggestions'
 
 export class ValidationError extends Error {
   constructor(public field: string, message: string) {
@@ -114,6 +115,10 @@ export function validateCollection<T extends Partial<NewCollectionInput>>(input:
     const name = clean(input.name)
     if (!name) throw new ValidationError('name', 'La lista necesita un nombre')
     out.name = name
+  }
+  if ('emoji' in input) {
+    if (!isEmoji(input.emoji ?? '')) throw new ValidationError('emoji', 'Elegí un solo emoji')
+    out.emoji = input.emoji!.trim()
   }
   return out
 }

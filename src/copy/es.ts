@@ -42,6 +42,21 @@ export const t = {
     nowHave: (name: string) => `${name}: ya la tenés`,
     nowWant: (name: string) => `${name}: pasó a "me falta"`,
   },
+  select: {
+    menu: 'Mover a otra lista',
+    title: (n: number) => (n === 0 ? 'Elegí qué mover' : n === 1 ? '1 elegido' : `${n} elegidos`),
+    hint: 'Tip: manteniendo apretado un ítem también empezás a elegir.',
+    all: 'Todos',
+    none: 'Ninguno',
+    move: 'Mover',
+    moveTo: (n: number) => (n === 1 ? 'Mover 1 ítem a…' : `Mover ${n} ítems a…`),
+    newList: '＋ Lista nueva',
+    newListTitle: 'Lista nueva',
+    moved: (n: number, list: string) => (n === 1 ? `Movido a ${list}` : `${n} movidos a ${list}`),
+    error: 'No se pudo mover. Probá de nuevo.',
+    selected: 'Elegido',
+    notSelected: 'Sin elegir',
+  },
   /** Sentido del orden según el tipo de campo. */
   sortDir: {
     text: { asc: 'A → Z', desc: 'Z → A' },
@@ -76,6 +91,10 @@ export const t = {
     name: 'Nombre',
     namePh: 'Ej: Camisetas',
     create: 'Crear lista',
+    other: 'Otro',
+    otherTitle: 'Otro ícono',
+    otherHint: 'Escribí o pegá un emoji desde el teclado.',
+    emojiInvalid: 'Tiene que ser un solo emoji',
   },
   item: {
     newTitle: 'Nuevo',
