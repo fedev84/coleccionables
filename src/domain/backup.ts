@@ -127,7 +127,7 @@ export function parseBackup(text: string): ParsedList[] {
     throw new BackupError('No encontramos listas en el archivo')
   }
   const { app, version } = data as { app?: unknown; version?: unknown }
-  if (app !== undefined && app !== BACKUP_APP) throw new BackupError('Este archivo no es de Colección')
+  if (app !== undefined && app !== BACKUP_APP) throw new BackupError('Este archivo no es de Coleccionables')
   if (typeof version === 'number' && version > BACKUP_VERSION) {
     throw new BackupError('El backup es de una versión más nueva de la app. Actualizala y probá de nuevo.')
   }

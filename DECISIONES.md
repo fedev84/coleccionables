@@ -1,4 +1,4 @@
-# Decisiones — Colección
+# Decisiones — Coleccionables
 
 Registro corto. Una fila = una decisión. Si cambia, se tacha y se agrega la nueva con fecha.
 
@@ -136,3 +136,13 @@ app/container.ts = el único archivo que cablea las implementaciones
 | 61 | Destino: otra lista o "＋ Lista nueva", que copia el ícono y los campos de la lista de origen | Partir una lista en dos no debería obligar a configurarla de nuevo. |
 | 62 | Los campos propios con datos viajan: si el destino tiene uno con el mismo nombre y tipo, el dato pasa a ese; si no, el campo se suma al destino | Si no, el dato quedaría guardado pero invisible. Misma idea que el import (#51). |
 | 63 | Mover se puede deshacer (vuelven los ítems y los campos que tenía el destino); la foto no se toca | La foto está guardada por id de ítem, no por lista. |
+
+## Publicación (2026-10-23)
+
+| # | Decisión | Por qué |
+|---|---|---|
+| 64 | `appId` definitivo: **`com.coleccionables.app`** (antes `com.fedev84.coleccion`, provisorio) | Elegido por Fede, alineado con el nombre del repo. Ya no se cambia: Play lo ata a la ficha, y cambiarlo instala otra app con la base vacía. |
+| 65 | Versión 1.1.0 (versionCode 2) | Primera que va a Play. |
+| 66 | Nombre: **Coleccionables** (antes "Colección") | Coincide con el `appId` y el repo, y se encuentra mejor en Play que "Colección", muy genérico. El formato del backup sigue diciendo `"app": "coleccion"` para que los archivos viejos se sigan importando. |
+| 67 | Página pública y política de privacidad en **GitHub Pages**, desde `docs/` del mismo repo | El repo ya es público; es gratis y la página sale del mismo código. URL: `https://fedev84.github.io/coleccionables/privacidad/`. |
+| 68 | Textos y respuestas de Play Console en `assets/store/FICHA.md` | Un solo lugar para lo que se carga en la consola; tiene que decir lo mismo que la política de privacidad. |

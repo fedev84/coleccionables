@@ -1,4 +1,4 @@
-# Colección
+# Coleccionables
 
 App Android liviana para organizar colecciones (empezando por camisetas de fútbol): listas propias, qué tengo y qué me falta, fotos, buscar, ordenar y compartir. Todo local en SQLite, exportable. Vue 3 + Ionic + Capacitor.
 

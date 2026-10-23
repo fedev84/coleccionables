@@ -1,4 +1,4 @@
-# Plan — Colección
+# Plan — Coleccionables
 
 App Android liviana para organizar colecciones (empezando por camisetas de fútbol): listas propias, qué tengo y qué me falta, buscar y ordenar. Todo local, exportable.
 
@@ -63,9 +63,9 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 
 ### Etapa 5 — Pulido y publicación (si querés)
 - ✅ Ícono y splash (2026-10-05): camiseta blanca con tilde sobre verde. Se regeneran con `npm run assets` desde `scripts/assets/art.mjs`.
-- Nombre final.
-- `appId` definitivo (hoy `com.fedev84.coleccion`, provisorio).
-- Firma de release y ficha de Play Store.
+- ✅ Nombre final (2026-10-23): **Coleccionables**.
+- ✅ `appId` definitivo (2026-10-23): `com.coleccionables.app`.
+- Firma de release y ficha de Play Store. Ficha y respuestas: `assets/store/FICHA.md`. Privacidad: `docs/` (GitHub Pages).
 
 ## Extras ✅ (2026-10-02)
 - **Campos por lista** (⋮ → "Campos de la lista"): ocultar o renombrar los de fábrica y sumar campos propios (texto o número). Se ven en el formulario, la línea de info, la búsqueda, el orden, el backup y la planilla.

@@ -1,4 +1,4 @@
-package com.fedev84.coleccion;
+package com.coleccionables.app;
 
 import com.getcapacitor.BridgeActivity;
 

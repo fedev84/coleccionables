@@ -1,4 +1,4 @@
-# Instrucciones para trabajar en Colección
+# Instrucciones para trabajar en Coleccionables
 
 Para cualquier asistente de IA (Claude, Codex, Cursor, etc.) o persona que tome el proyecto. Leé esto, [PLAN.md](PLAN.md) y [DECISIONES.md](DECISIONES.md) antes de tocar código.
 
@@ -33,5 +33,5 @@ Para cualquier asistente de IA (Claude, Codex, Cursor, etc.) o persona que tome 
 - **Android necesita JDK 21** (`JAVA_HOME=/opt/homebrew/opt/openjdk@21`); con otro JDK Gradle falla.
 - `sql.js` 1.11.0 y TypeScript 6 están fijos a propósito (ver DECISIONES #4).
 - En un navegador headless o una pestaña oculta, `jeep-sqlite` (SQLite web) puede quedar colgado al cargar hasta que la página pinta un frame. No es un bug de la app; en Android se usa SQLite nativo.
-- `appId` `com.fedev84.coleccion` es provisorio: confirmarlo antes de registrar la app en Play.
+- `appId` definitivo: `com.coleccionables.app`. No se cambia más: Play lo ata a la ficha, y cambiarlo instala otra app (con la base vacía).
 - `carga-inicial/` está fuera de git porque tiene fotos personales: no lo subas.

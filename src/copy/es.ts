@@ -2,7 +2,7 @@
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 export const t = {
-  appName: 'Colección',
+  appName: 'Coleccionables',
   common: { cancel: 'Cancelar', save: 'Guardar', delete: 'Borrar', close: 'Cerrar', done: 'Listo' },
   home: {
     title: 'Mis listas',

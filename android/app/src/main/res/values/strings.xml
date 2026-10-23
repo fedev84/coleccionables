@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Colección</string>
-    <string name="title_activity_main">Colección</string>
-    <string name="package_name">com.fedev84.coleccion</string>
-    <string name="custom_url_scheme">com.fedev84.coleccion</string>
+    <string name="app_name">Coleccionables</string>
+    <string name="title_activity_main">Coleccionables</string>
+    <string name="package_name">com.coleccionables.app</string>
+    <string name="custom_url_scheme">com.coleccionables.app</string>
 </resources>
