@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Item } from './models'
 import { defaultFields, type FieldConfig } from './fields'
-import { DEFAULT_VIEW, applyView, matches, parseView, resolveView, sortFields } from './query'
+import { DEFAULT_VIEW, applyView, filterFields, filterOptions, matches, parseView, resolveView, sortFields } from './query'
 
 let n = 0
 const item = (p: Partial<Item>): Item => ({
@@ -75,5 +75,35 @@ describe('campos nuevos y propios', () => {
     expect(sortFields(cfg)).toEqual(['name', 'year', 'version', 'authenticity', 'price', 'place', 'x:d', 'createdAt', 'updatedAt'])
     expect(resolveView({ ...DEFAULT_VIEW, sort: 'size', dir: 'desc' }, cfg)).toEqual({ ...DEFAULT_VIEW, sort: 'name', dir: 'asc' })
     expect(parseView('{"sort":"x:d"}').sort).toBe('x:d')
+  })
+})
+
+describe('filtros por campo', () => {
+  const a = item({ name: 'A', size: 'L', authenticity: 'original', year: 2014 })
+  const b = item({ name: 'B', size: 'l ', authenticity: 'replica', year: 1986 })
+  const c = item({ name: 'C', size: 'XL', extra: { dorsal: 10 } })
+  const d = item({ name: 'D', size: 'M', extra: { dorsal: 10 } })
+  const xs = [a, b, c, d]
+
+  it('agrupa valores iguales sin importar mayúsculas y deja "sin dato" al final', () => {
+    expect(filterOptions(xs, 'size')).toEqual([
+      { key: 'm', label: 'M', count: 1 },
+      { key: 'l', label: 'L', count: 2 },
+      { key: 'xl', label: 'XL', count: 1 },
+    ])
+    expect(filterOptions(xs, 'authenticity').map((o) => [o.label, o.count])).toEqual([['Original', 1], ['Réplica', 1], ['', 2]])
+    expect(filterOptions(xs, 'year').map((o) => o.label)).toEqual(['1986', '2014', ''])
+  })
+
+  it('filtra por valor exacto, por "sin dato" y combinado con el texto', () => {
+    expect(names(applyView(xs, DEFAULT_VIEW, '', defaultFields(), { size: 'l' }))).toEqual(['A', 'B'])
+    expect(names(applyView(xs, DEFAULT_VIEW, '', defaultFields(), { authenticity: '' }))).toEqual(['C', 'D'])
+    expect(names(applyView(xs, DEFAULT_VIEW, '', defaultFields(), { 'x:dorsal': '10', size: 'xl' }))).toEqual(['C'])
+    expect(names(applyView(xs, DEFAULT_VIEW, 'b', defaultFields(), { size: 'l' }))).toEqual(['B'])
+  })
+
+  it('ofrece los campos visibles que agrupan y los propios', () => {
+    const cfg: FieldConfig = { hidden: ['place'], labels: {}, custom: [{ id: 'dorsal', label: 'Dorsal', type: 'number' }] }
+    expect(filterFields(cfg)).toEqual(['year', 'version', 'size', 'authenticity', 'x:dorsal'])
   })
 })

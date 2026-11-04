@@ -99,3 +99,8 @@ app/src/main/assets/public
 app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
+
+# Firma de release: contraseña y clave fuera del repo (ver DECISIONES.md)
+keystore.properties
+*.jks
+*.keystore

@@ -15,6 +15,8 @@ npm test           # tests del dominio (Vitest)
 npm run typecheck  # vue-tsc
 npm run android    # build + sync + abre Android Studio
 npm run assets     # regenera ícono y splash desde scripts/assets/art.mjs
+npm run release    # tests + AAB firmado → android/app/build/outputs/bundle/release/ (ver assets/store/FICHA.md)
+npm run store      # imágenes de la ficha de Play → assets/store/play/ (con npm run dev andando)
 ```
 
 APK de debug sin abrir Android Studio (requiere JDK 21):

@@ -33,6 +33,8 @@ export const t = {
     noResults: { title: 'Nada coincide', body: 'Probá con otra palabra o cambiá el filtro.' },
     shown: (n: number, total: number) => `${n} de ${total}`,
     filter: { all: 'Todos', have: 'Tengo', want: 'Me falta' },
+    noValue: 'Sin dato',
+    clearFilter: 'Quitar filtro',
     sortTitle: 'Ordenar por',
     flip: 'Invertir orden',
     want: 'Falta',

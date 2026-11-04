@@ -1,7 +1,7 @@
 {
   "name": "coleccion",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,9 @@
     "prebuild": "npm run wasm",
     "cap:sync": "npm run build && cap sync",
     "android": "npm run cap:sync && cap open android",
-    "assets": "node scripts/assets/generate.mjs"
+    "assets": "node scripts/assets/generate.mjs",
+    "release": "npm test && npm run cap:sync && cd android && JAVA_HOME=${JAVA_HOME:-/opt/homebrew/opt/openjdk@21} ./gradlew bundleRelease",
+    "store": "node scripts/store/demo.mjs && node scripts/store/capture.mjs && node scripts/store/generate.mjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",

@@ -65,7 +65,7 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 - ✅ Ícono y splash (2026-10-05): camiseta blanca con tilde sobre verde. Se regeneran con `npm run assets` desde `scripts/assets/art.mjs`.
 - ✅ Nombre final (2026-10-23): **Coleccionables**.
 - ✅ `appId` definitivo (2026-10-23): `com.coleccionables.app`.
-- Firma de release y ficha de Play Store. Ficha y respuestas: `assets/store/FICHA.md`. Privacidad: `docs/` (GitHub Pages).
+- ✅ Firma de release y AAB (2026-10-23): `npm run release`. Ficha y respuestas: `assets/store/FICHA.md`. Privacidad: `docs/` (GitHub Pages).
 
 ## Extras ✅ (2026-10-02)
 - **Campos por lista** (⋮ → "Campos de la lista"): ocultar o renombrar los de fábrica y sumar campos propios (texto o número). Se ven en el formulario, la línea de info, la búsqueda, el orden, el backup y la planilla.
@@ -79,6 +79,7 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 - **Personalización** ✅ (2026-10-08): texto libre con atajos Dorsal / Parche / Firmada; va en la línea de info y en lo que se comparte.
 - **Ícono de lista libre** ✅ (2026-10-23): 24 emojis + "Otro" (cualquier emoji del teclado).
 - **Mover ítems a otra lista** ✅ (2026-10-23): mantener apretado (o ⋮ → "Mover a otra lista"), elegir varios o "Todos", y mandarlos a otra lista o a una nueva. Con "Deshacer".
+- **Filtros por campo** ✅ (2026-11-04): debajo del orden, un chip por campo (año, versión, talle, original o réplica, dónde lo compré y los propios). Muestra los valores con cuántos hay, incluido "Sin dato"; se combinan entre sí y con la búsqueda. El buscador de texto ya buscaba en todos los campos.
 
 ## Ideas para después (no se hacen salvo que lo pidas)
 - Elegir qué incluir en la imagen (por ejemplo, sumar el precio).

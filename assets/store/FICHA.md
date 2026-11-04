@@ -45,7 +45,7 @@ Sacale una foto a cada pieza o elegila de la galería. Se guarda comprimida para
 Marcá con un toque lo que conseguiste. Compartí lo que te falta por WhatsApp, como texto o como imagen con fotos, para que te ayuden a buscarlo.
 
 🔍 BUSCÁ Y ORDENÁ
-Buscá en una lista o en todas a la vez, y ordená por nombre, año, talle, precio y más.
+Buscá en una lista o en todas a la vez, filtrá por talle, año, versión u original/réplica, y ordená por nombre, precio y más.
 
 🔀 REORGANIZÁ
 Mové piezas de una lista a otra o partí una lista en dos en un par de toques. Duplicá una pieza para cargar otra versión rápido.
@@ -59,13 +59,15 @@ Se adapta solo al tema de tu teléfono.
 Liviana y simple, para tener tu colección siempre a mano.
 ```
 
-**Gráficos** (se generan en la entrega 3)
+**Gráficos** (en `assets/store/`)
 
 | Campo | Archivo | Tamaño |
 |---|---|---|
 | Ícono de la app | `icon-512.png` | 512×512 |
 | Gráfico de funciones | `play/feature-graphic.png` | 1024×500 |
-| Capturas de teléfono (en este orden) | `play/01-…png` en adelante | 1080×1920 |
+| Capturas de teléfono (en este orden) | `play/01-inicio.png`, `02-lista`, `03-ficha`, `04-me-falta`, `05-mover`, `06-oscuro` | 1080×1920 |
+
+Las capturas usan datos de ejemplo (`demo-backup.json`): camisetas dibujadas, sin escudos ni marcas reales, para que la app no parezca de ningún club, y emojis de Noto (libres), no los de Apple. Para regenerarlas, con `npm run dev` andando: `npm run store`.
 
 ## 3. Categoría y contacto
 
@@ -103,16 +105,32 @@ Play Console → Política → **Contenido de la app**. Una sección por vez:
 
 ## 5. Versión, prueba y lanzamiento (al final, con el AAB)
 
+### Build de release
+
+- `npm run release` corre los tests y genera `android/app/build/outputs/bundle/release/app-release.aab`, firmado con la clave de subida.
+- **Antes de cada subida**, sumar 1 a `versionCode` en `android/app/build.gradle` (Play rechaza uno repetido) y actualizar `versionName` y `version` en `package.json`.
+- Al crear la versión, dejar activado **Play App Signing**: Google guarda la clave final y nosotros solo la de subida.
+- Firma: la clave de subida está en `~/.android-keys/coleccionables-upload.jks` y su contraseña en `android/keystore.properties`. Ninguna de las dos va al repo; hay copia de las dos en `apps/jks/coleccionables/`. **Hacé backup de esa carpeta fuera de la Mac.** Si se pierden, Play puede resetear la clave de subida, pero tarda días.
+- Huellas de la clave de subida (solo para verificar):
+  - SHA-1: `56:60:89:E2:DC:D8:E8:D6:51:18:B4:10:DA:B7:25:25:2A:45:BA:CC`
+  - SHA-256: `11:DF:CA:44:FE:2F:2B:57:A4:AF:49:61:C1:98:09:33:BB:34:DB:EB:28:E9:31:15:F1:6C:3B:B2:D2:C9:2F:35`
+- Chequeado el 2026-10-23 (1.1.0, versionCode 2); la 1.2.0 (versionCode 3, 2026-11-04) no cambia permisos ni librerías nativas:
+  - Apunta a API 36.
+  - Las librerías nativas (SQLCipher del plugin de SQLite y las de la cámara) están alineadas a 16 KB, como pide Play.
+  - Permisos: solo internet (lo agrega Capacitor). Se sacaron los de huella que suma el plugin de SQLite: la app no los usa.
+  - No pide el ID de publicidad.
+
+### Lanzamiento
+
 - **Países:** Argentina para empezar (la app está en castellano rioplatense). Se pueden sumar después sin subir otra versión.
 - **Prueba cerrada obligatoria:** la cuenta de desarrollador es personal y nueva, así que para pasar a producción Google exige una prueba cerrada con **12 testers o más durante 14 días seguidos**. Conviene invitar unos 15. Ver la Etapa 6 de `gastos/docs/plan-publicacion-play-store.md`: es el mismo procedimiento.
-- **Notas de la versión** (1.1.0):
+- **Notas de la versión** (1.2.0). Sirven aunque sea la primera que subís:
 
 ```text
 <es-419>
-Primera versión de Coleccionables:
-• Listas para cada colección, con el ícono y los campos que quieras.
-• Fotos de cada pieza, tengo / me falta y búsqueda en todas las listas.
-• Compartí lo que te falta como texto o como imagen.
+• Nuevo: filtrá cada lista por talle, año, versión, original o réplica y tus campos propios.
+• Listas con el ícono y los campos que quieras, y fotos de cada pieza.
+• Tengo / me falta, búsqueda en todas las listas y compartir como texto o imagen.
 • Mové piezas entre listas y hacé backup con fotos.
 </es-419>
 ```

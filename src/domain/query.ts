@@ -72,11 +72,55 @@ function compareValues(a: unknown, b: unknown, f: SortField): number {
 
 const isEmpty = (v: unknown) => v == null || v === ''
 
-export function applyView(items: Item[], view: ListView, text = '', cfg: FieldConfig = defaultFields()): Item[] {
+// ---------- Filtros por campo ----------
+/** Se filtra por los campos cuyos valores se repiten; los textos libres y el precio no agrupan. */
+type FilterBuiltin = 'year' | 'version' | 'size' | 'authenticity' | 'place'
+export type FilterField = FilterBuiltin | `x:${string}`
+const FILTER_BUILTINS: FilterBuiltin[] = ['year', 'version', 'size', 'authenticity', 'place']
+/** Campo → valor elegido (normalizado con `filterKey`; '' = sin dato). */
+export type Filters = Partial<Record<FilterField, string>>
+
+export interface FilterOption {
+  key: string
+  /** Cómo se muestra; vacío si es "sin dato". */
+  label: string
+  count: number
+}
+
+export const filterFields = (cfg: FieldConfig): FilterField[] => [
+  ...FILTER_BUILTINS.filter((f) => isShown(cfg, f)),
+  ...cfg.custom.map((f) => `x:${f.id}` as const),
+]
+
+/** "l", "L " y "L" son el mismo talle; "Réplica" y "replica", lo mismo. */
+export const filterKey = (v: unknown) => (isEmpty(v) ? '' : fold(String(v).trim()))
+
+const valueLabel = (f: FilterField, v: unknown) =>
+  f === 'authenticity' ? AUTHENTICITY_LABELS[v as keyof typeof AUTHENTICITY_LABELS] ?? String(v) : String(v).trim()
+
+/** Valores distintos de un campo con cuántos ítems tiene cada uno, en el orden del campo y "sin dato" al final. */
+export function filterOptions(items: Item[], f: FilterField): FilterOption[] {
+  const found = new Map<string, FilterOption & { raw: unknown }>()
+  for (const i of items) {
+    const raw = valueOf(i, f)
+    const key = filterKey(raw)
+    const o = found.get(key)
+    if (o) o.count++
+    else found.set(key, { key, label: key ? valueLabel(f, raw) : '', count: 1, raw })
+  }
+  return [...found.values()]
+    .sort((a, b) => (!a.key || !b.key ? (a.key ? -1 : 1) : compareValues(a.raw, b.raw, f)))
+    .map(({ key, label, count }) => ({ key, label, count }))
+}
+
+export const matchesFilters = (item: Item, filters: Filters) =>
+  Object.entries(filters).every(([f, key]) => filterKey(valueOf(item, f as FilterField)) === key)
+
+export function applyView(items: Item[], view: ListView, text = '', cfg: FieldConfig = defaultFields(), filters: Filters = {}): Item[] {
   const { status, sort, dir } = resolveView(view, cfg)
   const sign = dir === 'asc' ? 1 : -1
   return items
-    .filter((i) => (status === 'all' || i.status === status) && matches(i, text))
+    .filter((i) => (status === 'all' || i.status === status) && matches(i, text) && matchesFilters(i, filters))
     .sort((a, b) => {
       const va = valueOf(a, sort)
       const vb = valueOf(b, sort)

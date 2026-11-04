@@ -17,7 +17,7 @@ export const COLORS = {
 const FIT = 'translate(512 512) scale(0.97) translate(-512 -525)'
 
 // Mangas, cuerpo con puntas redondeadas y cuello en curva.
-const SHIRT =
+export const SHIRT =
   'M 430 260 L 330 296 Q 312 302 300 318 L 238 400 Q 228 414 242 424 L 310 470 Q 322 478 332 468 L 362 432 ' +
   'L 362 766 Q 362 790 386 790 L 638 790 Q 662 790 662 766 L 662 432 L 692 468 Q 702 478 714 470 L 782 424 ' +
   'Q 796 414 786 400 L 724 318 Q 712 302 694 296 L 594 260 Q 512 332 430 260 Z'

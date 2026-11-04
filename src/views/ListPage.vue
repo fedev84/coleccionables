@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import {
-  IonBackButton, IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonLabel, IonList,
+  IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonLabel, IonList,
   IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToolbar, actionSheetController, alertController,
   useBackButton, useIonRouter,
 } from '@ionic/vue'
-import { add, close, ellipsisVertical, swapVerticalOutline } from 'ionicons/icons'
+import { add, caretDown, close, closeCircle, ellipsisVertical, swapVerticalOutline } from 'ionicons/icons'
 import { computed, reactive, ref, watchEffect } from 'vue'
 import { services } from '@/app/container'
 import type { Collection, Id, Item, ItemStatus } from '@/domain/models'
-import { applyView, defaultDir, resolveView, sortFields, type SortField, type StatusFilter } from '@/domain/query'
+import {
+  applyView, defaultDir, filterFields, filterOptions, resolveView, sortFields,
+  type FilterField, type Filters, type SortField, type StatusFilter,
+} from '@/domain/query'
 import { shareText as buildShareText } from '@/domain/shareText'
 import { defaultFields } from '@/domain/fields'
 import { dirName, sortName } from '@/composables/fieldLabels'
@@ -40,7 +43,50 @@ const fields = computed(() => list.value?.fields ?? defaultFields())
 // Si el orden guardado era por un campo que ya no está, se ordena por nombre.
 const view = computed(() => resolveView(views.get(props.id), fields.value))
 const search = ref('')
-const rows = computed(() => applyView(all.value, view.value, search.value, fields.value))
+
+// ---------- Filtros por campo (talle, año…): duran mientras estás en la lista, como la búsqueda ----------
+const chosen = ref<Partial<Record<FilterField, { key: string; label: string }>>>({})
+/** Si el campo se ocultó o se borró, su filtro deja de contar. */
+const filters = computed<Filters>(() => {
+  const ok = filterFields(fields.value)
+  return Object.fromEntries(Object.entries(chosen.value).filter(([f]) => ok.includes(f as FilterField)).map(([f, c]) => [f, c!.key]))
+})
+/** Las opciones de cada campo salen de lo que muestran los demás filtros: ninguna da cero. */
+const facets = computed(() =>
+  filterFields(fields.value)
+    .map((f) => {
+      const { [f]: _, ...others } = filters.value
+      const options = filterOptions(applyView(all.value, view.value, search.value, fields.value, others), f)
+      return { f, name: sortName(f, fields.value), options, active: f in filters.value ? chosen.value[f] : undefined }
+    })
+    // Un campo con un solo valor (o vacío en todos) no sirve para filtrar.
+    .filter((x) => x.active || x.options.length > 1)
+    // Los aplicados primero, para que se vean sin deslizar.
+    .sort((a, b) => Number(!!b.active) - Number(!!a.active)),
+)
+
+function clearFilter(f: FilterField) {
+  const { [f]: _, ...rest } = chosen.value
+  chosen.value = rest
+}
+
+async function filterMenu(facet: (typeof facets.value)[number]) {
+  const label = (o: { label: string }) => o.label || t.list.noValue
+  const sheet = await actionSheetController.create({
+    header: facet.name,
+    buttons: [
+      ...facet.options.map((o) => ({
+        text: `${o.key === facet.active?.key ? '✓ ' : ''}${label(o)} · ${o.count}`,
+        handler: () => { chosen.value = { ...chosen.value, [facet.f]: { key: o.key, label: label(o) } } },
+      })),
+      ...(facet.active ? [{ text: t.list.clearFilter, handler: () => { clearFilter(facet.f) } }] : []),
+      { text: t.common.cancel, role: 'cancel' },
+    ],
+  })
+  await sheet.present()
+}
+
+const rows = computed(() => applyView(all.value, view.value, search.value, fields.value, filters.value))
 const filtered = computed(() => rows.value.length !== all.value.length)
 const sortLabel = computed(() => `${sortName(view.value.sort, fields.value)} (${dirName(view.value.sort, fields.value, view.value.dir)})`)
 
@@ -269,6 +315,24 @@ async function confirmDelete() {
           <button class="sort" @click="sortMenu"><ion-icon :icon="swapVerticalOutline" />{{ sortLabel }}</button>
           <span v-if="filtered" class="muted">{{ t.list.shown(rows.length, all.length) }}</span>
         </div>
+        <div v-if="facets.length" class="chips">
+          <ion-chip
+            v-for="x in facets"
+            :key="x.f"
+            :outline="!x.active"
+            :color="x.active ? 'primary' : undefined"
+            @click="filterMenu(x)"
+          >
+            <ion-label>{{ x.active ? `${x.name}: ${x.active.label}` : x.name }}</ion-label>
+            <ion-icon
+              v-if="x.active"
+              :icon="closeCircle"
+              :aria-label="t.list.clearFilter"
+              @click.stop="clearFilter(x.f)"
+            />
+            <ion-icon v-else :icon="caretDown" />
+          </ion-chip>
+        </div>
       </template>
 
       <template v-if="rows.length">
@@ -318,6 +382,15 @@ async function confirmDelete() {
   font-size: 14px;
   font-weight: 600;
 }
+.chips {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 0 12px 8px;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chips ion-chip { flex: none; margin: 0 2px; }
 .items { padding: 0; }
 .fab-space { height: 96px; }
 ion-fab { margin-bottom: var(--ion-safe-area-bottom, 0px); }
