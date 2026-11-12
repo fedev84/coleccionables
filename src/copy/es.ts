@@ -13,8 +13,10 @@ export const t = {
     results: (n: number) => (n === 0 ? 'Nada coincide' : n === 1 ? '1 resultado' : `${n} resultados`),
     empty: { title: 'Todavía no hay listas', body: 'Armá la primera: camisetas, figuritas, vinilos…' },
   },
-  counts: (have: number, want: number) =>
-    have + want === 0 ? 'Vacía' : [have && `${have} tengo`, want && plural(want, 'me falta', 'me faltan')].filter(Boolean).join(' · '),
+  counts: (have: number, want: number, gone = 0) =>
+    have + want + gone === 0
+      ? 'Vacía'
+      : [have && `${have} tengo`, want && plural(want, 'me falta', 'me faltan'), gone && `${gone} tuve`].filter(Boolean).join(' · '),
   list: {
     edit: 'Editar lista',
     fields: 'Campos de la lista',
@@ -32,7 +34,7 @@ export const t = {
     search: 'Buscar en esta lista',
     noResults: { title: 'Nada coincide', body: 'Probá con otra palabra o cambiá el filtro.' },
     shown: (n: number, total: number) => `${n} de ${total}`,
-    filter: { all: 'Todos', have: 'Tengo', want: 'Me falta' },
+    filter: { all: 'Todos', have: 'Tengo', want: 'Me falta', gone: 'Tuve' },
     noValue: 'Sin dato',
     clearFilter: 'Quitar filtro',
     sortTitle: 'Ordenar por',
@@ -54,7 +56,9 @@ export const t = {
     moveTo: (n: number) => (n === 1 ? 'Mover 1 ítem a…' : `Mover ${n} ítems a…`),
     newList: '＋ Lista nueva',
     newListTitle: 'Lista nueva',
-    moved: (n: number, list: string) => (n === 1 ? `Movido a ${list}` : `${n} movidos a ${list}`),
+    moved: (n: number, list: string, renamed = 0) =>
+      (n === 1 ? `Movido a ${list}` : `${n} movidos a ${list}`) +
+      (renamed ? ` (${renamed === 1 ? 'uno ya estaba: le agregué "(2)"' : `${renamed} ya estaban: les agregué "(2)"`})` : ''),
     error: 'No se pudo mover. Probá de nuevo.',
     selected: 'Elegido',
     notSelected: 'Sin elegir',
@@ -103,7 +107,12 @@ export const t = {
     editTitle: 'Editar',
     name: 'Nombre',
     namePh: 'Ej: Boca Juniors 2014',
-    status: { have: 'Tengo', want: 'Me falta' },
+    status: { have: 'Tengo', want: 'Me falta', gone: 'Tuve' },
+    goneAt: 'Desde',
+    goneReason: 'Por qué ya no la tengo',
+    goneReasonPh: 'Ej: se la regalé a mi sobrino',
+    goneChips: ['Regalada', 'Vendida', 'Cambiada', 'Se rompió', 'Se perdió'],
+    goneHint: 'Queda en "Tuve", con sus fotos y datos, pero no cuenta en tu colección.',
     year: 'Año de salida',
     yearPh: 'Ej: 2014',
     version: 'Versión',
@@ -123,6 +132,10 @@ export const t = {
     duplicate: 'Duplicar',
     duplicateTitle: 'Copia',
     duplicateHint: 'Es una copia: cambiá lo que haga falta (por ejemplo la versión) y guardá.',
+    delete: 'Borrar',
+    deleteTitle: (name: string) => `¿Borrar "${name}"?`,
+    deleteBody: 'Se borra con todas sus fotos y no se puede deshacer. Solo queda si está en un backup que hayas exportado antes.',
+    deleteError: 'No se pudo borrar. Probá de nuevo.',
   },
   data: {
     title: 'Exportar / importar',
@@ -131,28 +144,50 @@ export const t = {
     light: { title: 'Backup sin fotos', body: 'Mucho más liviano. Al importarlo no borra las fotos que ya tenés.' },
     csv: { title: 'Planilla (CSV)', body: 'Para abrir en Excel o Google Sheets. No se puede importar.' },
     importTitle: 'Importar',
-    import: { title: 'Importar un backup', body: 'Suma lo que no tenés y actualiza lo que cambió. No borra nada.' },
+    import: { title: 'Importar un backup', body: 'Suma lo que no tenés y, si algo cambió, te pregunta con cuál quedarte. No borra nada.' },
     shareDialog: 'Guardar o compartir',
     nothing: 'Ese backup no trae nada nuevo',
     confirmTitle: '¿Importamos?',
     confirm: 'Importar',
-    summary: (s: { listsAdded: number; itemsAdded: number; itemsUpdated: number; unchanged: number }) =>
+    summary: (s: { listsAdded: number; itemsAdded: number; conflicts: number; unchanged: number; renamed: number }) =>
       [
         s.listsAdded && plural(s.listsAdded, 'lista nueva', 'listas nuevas'),
         s.itemsAdded && plural(s.itemsAdded, 'ítem nuevo', 'ítems nuevos'),
-        s.itemsUpdated && plural(s.itemsUpdated, 'ítem actualizado', 'ítems actualizados'),
-        s.unchanged && plural(s.unchanged, 'que ya tenías', 'que ya tenías'),
+        s.renamed && `${s.renamed} con "(2)" porque ya había uno igual`,
+        s.conflicts && plural(s.conflicts, 'distinto para elegir', 'distintos para elegir'),
+        s.unchanged && plural(s.unchanged, 'que ya tenías igual', 'que ya tenías iguales'),
       ].filter(Boolean).join('\n'),
+    conflicts: {
+      title: '¿Cuál queda?',
+      intro: (n: number) =>
+        n === 1
+          ? 'Esta pieza está en el teléfono y en el backup con datos distintos.'
+          : `Estas ${n} piezas están en el teléfono y en el backup con datos distintos.`,
+      allPhone: 'Todas del teléfono',
+      allBackup: 'Todas del backup',
+      newest: 'Las más nuevas',
+      phone: 'Teléfono',
+      backup: 'Backup',
+      edited: (date: string) => (date ? `editado ${date}` : 'sin fecha'),
+      photo: 'Otra foto',
+    },
     imported: 'Listo, importado',
     error: 'Algo salió mal. Probá de nuevo.',
   },
   photo: {
     add: 'Agregar foto',
-    change: 'Cambiar foto',
+    more: 'Otra foto',
     camera: 'Sacar foto',
     gallery: 'Elegir de la galería',
     view: 'Ver foto',
+    cover: 'Usar como principal',
     remove: 'Quitar foto',
+    main: 'Principal',
+    title: (n: number, max: number) => `Fotos · ${n} de ${max}`,
+    count: (n: number, total: number) => `${n} / ${total}`,
+    prev: 'Foto anterior',
+    next: 'Foto siguiente',
+    full: (max: number) => `Ya tiene ${max} fotos: quitá una para sumar otra`,
     error: 'No se pudo cargar la foto',
   },
 }

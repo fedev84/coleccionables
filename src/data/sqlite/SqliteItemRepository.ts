@@ -1,12 +1,13 @@
 import type { ItemRepository, ItemWrite } from '@/data/ports'
-import type { Id, Item } from '@/domain/models'
-import { parseAuthenticity } from '@/domain/validation'
+import { MAX_PHOTOS, type Id, type Item } from '@/domain/models'
+import { parseAuthenticity, parseStatus } from '@/domain/validation'
 import type { SqliteDb, Statement } from './SqliteDb'
 
 interface Row {
   id: string; list_id: string; name: string; status: string; year: number | null
   version: string | null; size: string | null; url: string | null; description: string | null
   price: number | null; place: string | null; extra: string | null; authenticity: string | null; customization: string | null
+  gone_at: string | null; gone_reason: string | null
   thumb: string | null; created_at: string; updated_at: string
 }
 
@@ -23,7 +24,7 @@ const toItem = (r: Row): Item => ({
   id: r.id,
   listId: r.list_id,
   name: r.name,
-  status: r.status === 'want' ? 'want' : 'have',
+  status: parseStatus(r.status),
   year: r.year ?? null,
   version: r.version,
   size: r.size,
@@ -34,6 +35,8 @@ const toItem = (r: Row): Item => ({
   price: r.price ?? null,
   place: r.place,
   extra: parseExtra(r.extra),
+  goneAt: r.gone_at ?? null,
+  goneReason: r.gone_reason ?? null,
   thumb: r.thumb,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
@@ -41,11 +44,11 @@ const toItem = (r: Row): Item => ({
 
 const upsert = (i: Item): Statement => ({
   sql: `INSERT OR REPLACE INTO items
-    (id, list_id, name, status, year, version, size, url, description, price, place, extra, authenticity, customization, thumb, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (id, list_id, name, status, year, version, size, url, description, price, place, extra, authenticity, customization, gone_at, gone_reason, thumb, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   values: [
     i.id, i.listId, i.name, i.status, i.year, i.version, i.size, i.url, i.description,
-    i.price, i.place, Object.keys(i.extra).length ? JSON.stringify(i.extra) : null, i.authenticity, i.customization, i.thumb, i.createdAt, i.updatedAt,
+    i.price, i.place, Object.keys(i.extra).length ? JSON.stringify(i.extra) : null, i.authenticity, i.customization, i.goneAt, i.goneReason, i.thumb, i.createdAt, i.updatedAt,
   ],
 })
 
@@ -66,36 +69,41 @@ export class SqliteItemRepository implements ItemRepository {
     return row ? toItem(row) : null
   }
 
-  save(item: Item, photo?: string | null) {
-    return this.saveMany([{ item, photo }])
+  save(item: Item, photos?: string[]) {
+    return this.saveMany([{ item, photos }])
   }
 
   saveMany(writes: ItemWrite[]) {
-    return this.db.batch(writes.flatMap(({ item, photo }) => {
+    return this.db.batch(writes.flatMap(({ item, photos }) => {
       const statements = [upsert(item)]
-      if (photo === null) statements.push({ sql: 'DELETE FROM photos WHERE item_id = ?', values: [item.id] })
-      else if (photo !== undefined) {
-        statements.push({ sql: 'INSERT OR REPLACE INTO photos (item_id, data) VALUES (?, ?)', values: [item.id, photo] })
+      // Las fotos se reemplazan todas juntas: así el orden queda siempre 0, 1, 2…
+      if (photos !== undefined) {
+        statements.push({ sql: 'DELETE FROM item_photos WHERE item_id = ?', values: [item.id] })
+        photos.slice(0, MAX_PHOTOS).forEach((data, position) =>
+          statements.push({ sql: 'INSERT INTO item_photos (item_id, position, data) VALUES (?, ?, ?)', values: [item.id, position, data] }))
       }
       return statements
     }))
   }
 
-  remove(id: Id) {
-    return this.db.batch([
-      { sql: 'DELETE FROM photos WHERE item_id = ?', values: [id] },
+  async remove(id: Id) {
+    await this.db.batch([
+      { sql: 'DELETE FROM item_photos WHERE item_id = ?', values: [id] },
       { sql: 'DELETE FROM items WHERE id = ?', values: [id] },
     ])
+    await this.db.flushJournal()
   }
 
-  async photo(id: Id) {
-    const [r] = await this.db.query<{ data: string }>('SELECT data FROM photos WHERE item_id = ?', [id])
-    return r?.data ?? null
+  async photos(id: Id) {
+    const rows = await this.db.query<{ data: string }>('SELECT data FROM item_photos WHERE item_id = ? ORDER BY position', [id])
+    return rows.map((r) => r.data)
   }
 
   async allPhotos() {
-    const rows = await this.db.query<{ item_id: string; data: string }>('SELECT item_id, data FROM photos')
-    return new Map(rows.map((r) => [r.item_id, r.data]))
+    const rows = await this.db.query<{ item_id: string; data: string }>('SELECT item_id, data FROM item_photos ORDER BY item_id, position')
+    const out = new Map<Id, string[]>()
+    for (const r of rows) out.set(r.item_id, [...(out.get(r.item_id) ?? []), r.data])
+    return out
   }
 
   async usedValues(field: 'version' | 'size' | 'place', listId: Id) {

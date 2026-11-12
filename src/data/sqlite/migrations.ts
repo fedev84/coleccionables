@@ -66,4 +66,26 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       ALTER TABLE items ADD COLUMN customization TEXT;
     `,
   },
+  {
+    // Hasta 5 fotos por ítem: la de posición 0 es la principal (su miniatura es items.thumb).
+    version: 6,
+    sql: `
+      CREATE TABLE IF NOT EXISTS item_photos (
+        item_id TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        data TEXT NOT NULL,
+        PRIMARY KEY (item_id, position)
+      );
+      INSERT OR IGNORE INTO item_photos (item_id, position, data) SELECT item_id, 0, data FROM photos;
+      DROP TABLE IF EXISTS photos;
+    `,
+  },
+  {
+    // Estado "Tuve": desde cuándo (AAAA-MM-DD) y por qué ya no la tengo.
+    version: 7,
+    sql: `
+      ALTER TABLE items ADD COLUMN gone_at TEXT;
+      ALTER TABLE items ADD COLUMN gone_reason TEXT;
+    `,
+  },
 ]

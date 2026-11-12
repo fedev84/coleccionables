@@ -6,7 +6,7 @@ import { DEFAULT_VIEW, applyView, filterFields, filterOptions, matches, parseVie
 let n = 0
 const item = (p: Partial<Item>): Item => ({
   id: String(++n), listId: 'l', name: 'x', status: 'have', year: null, version: null, size: null,
-  url: null, description: null, price: null, place: null, authenticity: null, customization: null, extra: {}, thumb: null,
+  url: null, description: null, price: null, place: null, authenticity: null, customization: null, extra: {}, goneAt: null, goneReason: null, thumb: null,
   createdAt: '2026-01-01', updatedAt: '2026-01-01', ...p,
 })
 

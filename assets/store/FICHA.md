@@ -39,10 +39,13 @@ Camisetas, figuritas, vinilos: anotá lo que tenés y lo que te falta.
 Armá una lista por colección, con el ícono que quieras. Cada lista tiene sus campos: año, versión, talle, original o réplica, personalización (dorsal, parches, firma), precio, dónde lo compraste… Ocultá los que no uses, cambiales el nombre o sumá los tuyos.
 
 📷 CON FOTOS
-Sacale una foto a cada pieza o elegila de la galería. Se guarda comprimida para que no ocupe lugar.
+Hasta 5 fotos por pieza, con la cámara o de la galería. Se guardan comprimidas para que no ocupen lugar.
 
 ✅ TENGO / ME FALTA
 Marcá con un toque lo que conseguiste. Compartí lo que te falta por WhatsApp, como texto o como imagen con fotos, para que te ayuden a buscarlo.
+
+📜 LO QUE TUVISTE
+¿La regalaste, la vendiste o se rompió? Pasala a "Tuve" con el motivo y la fecha: sale de tu colección pero no perdés su historia.
 
 🔍 BUSCÁ Y ORDENÁ
 Buscá en una lista o en todas a la vez, filtrá por talle, año, versión u original/réplica, y ordená por nombre, precio y más.
@@ -114,7 +117,7 @@ Play Console → Política → **Contenido de la app**. Una sección por vez:
 - Huellas de la clave de subida (solo para verificar):
   - SHA-1: `56:60:89:E2:DC:D8:E8:D6:51:18:B4:10:DA:B7:25:25:2A:45:BA:CC`
   - SHA-256: `11:DF:CA:44:FE:2F:2B:57:A4:AF:49:61:C1:98:09:33:BB:34:DB:EB:28:E9:31:15:F1:6C:3B:B2:D2:C9:2F:35`
-- Chequeado el 2026-10-23 (1.1.0, versionCode 2); la 1.2.0 (versionCode 3, 2026-11-04) no cambia permisos ni librerías nativas:
+- Chequeado el 2026-10-23 (1.1.0, versionCode 2); la 1.2.0 (versionCode 3, 2026-11-04) y la 1.3.0 (versionCode 4, 2026-11-12) no cambian permisos ni librerías nativas:
   - Apunta a API 36.
   - Las librerías nativas (SQLCipher del plugin de SQLite y las de la cámara) están alineadas a 16 KB, como pide Play.
   - Permisos: solo internet (lo agrega Capacitor). Se sacaron los de huella que suma el plugin de SQLite: la app no los usa.
@@ -124,13 +127,14 @@ Play Console → Política → **Contenido de la app**. Una sección por vez:
 
 - **Países:** Argentina para empezar (la app está en castellano rioplatense). Se pueden sumar después sin subir otra versión.
 - **Prueba cerrada obligatoria:** la cuenta de desarrollador es personal y nueva, así que para pasar a producción Google exige una prueba cerrada con **12 testers o más durante 14 días seguidos**. Conviene invitar unos 15. Ver la Etapa 6 de `gastos/docs/plan-publicacion-play-store.md`: es el mismo procedimiento.
-- **Notas de la versión** (1.2.0). Sirven aunque sea la primera que subís:
+- **Notas de la versión** (1.3.0):
 
 ```text
 <es-419>
-• Nuevo: filtrá cada lista por talle, año, versión, original o réplica y tus campos propios.
-• Listas con el ícono y los campos que quieras, y fotos de cada pieza.
-• Tengo / me falta, búsqueda en todas las listas y compartir como texto o imagen.
-• Mové piezas entre listas y hacé backup con fotos.
+• Nuevo "Tuve": guardá lo que regalaste, vendiste o se rompió, con motivo y fecha.
+• Hasta 5 fotos por pieza, y pasalas con flechas o deslizando.
+• Borrar ahora pide confirmación y no deja rastro.
+• Al importar un backup, si algo cambió, elegís con cuál quedarte.
+• Sin repetidos: avisa si ya tenés una pieza con el mismo nombre, año y versión.
 </es-419>
 ```

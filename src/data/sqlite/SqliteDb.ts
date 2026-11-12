@@ -29,6 +29,8 @@ export class SqliteDb {
     await conn.open()
 
     const db = new SqliteDb(sqlite, conn, name)
+    // Lo que se borra se pisa con ceros en el archivo: un ítem borrado no se puede recuperar de la base.
+    await db.tryPragma('secure_delete = ON')
     await db.migrate()
     return db
   }
@@ -51,6 +53,20 @@ export class SqliteDb {
       true,
     )
     await this.persist()
+  }
+
+  /** Después de un borrado definitivo: vuelca y vacía el journal (WAL), para que no quede ahí una copia. */
+  flushJournal() {
+    return this.tryPragma('wal_checkpoint(TRUNCATE)')
+  }
+
+  /** Un PRAGMA de limpieza que falle no puede dejar la app sin abrir ni frenar un borrado. */
+  private async tryPragma(pragma: string) {
+    try {
+      await this.query(`PRAGMA ${pragma}`)
+    } catch (e) {
+      console.warn(`PRAGMA ${pragma}`, e)
+    }
   }
 
   private async migrate() {

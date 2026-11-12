@@ -17,8 +17,10 @@ export interface Collection {
   updatedAt: Timestamp
 }
 
-/** have = lo tengo; want = me falta. */
-export type ItemStatus = 'have' | 'want'
+/** have = lo tengo; want = me falta; gone = lo tuve (lo regalé, se rompió…): queda como historial. */
+export type ItemStatus = 'have' | 'want' | 'gone'
+
+export const STATUS_LABELS: Record<ItemStatus, string> = { have: 'Tengo', want: 'Me falta', gone: 'Tuve' }
 
 export type Authenticity = 'original' | 'replica'
 
@@ -39,7 +41,10 @@ export interface Item {
   place: string | null
   /** Valores de los campos propios de la lista, por id de campo. */
   extra: Record<string, string | number>
-  /** Miniatura JPEG (data URL) para la lista. La foto grande va aparte (ver ItemRepository.photo). */
+  /** Solo si status = gone: desde cuándo no la tengo (AAAA-MM-DD) y por qué (texto libre). */
+  goneAt: string | null
+  goneReason: string | null
+  /** Miniatura JPEG (data URL) de la foto principal, para la lista. Las fotos grandes van aparte (ver ItemRepository.photos). */
   thumb: string | null
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -48,6 +53,7 @@ export interface Item {
 export interface CollectionWithCounts extends Collection {
   have: number
   want: number
+  gone: number
 }
 
 export type NewCollectionInput = Pick<Collection, 'name' | 'emoji'>
@@ -68,6 +74,8 @@ export interface ItemInput {
   customization?: string | null
   /** Por id de campo propio; llegan como texto desde los inputs. */
   extra?: Record<string, string | number>
+  goneAt?: string | null
+  goneReason?: string | null
 }
 
 /** Foto ya comprimida: la grande y su miniatura (data URLs JPEG). */
@@ -76,8 +84,11 @@ export interface Photo {
   thumb: string
 }
 
-/** Para "Deshacer" un borrado: el ítem y su foto. */
-export interface ItemSnapshot {
-  item: Item
-  photo: string | null
+/** Fotos por ítem, contando la principal. */
+export const MAX_PHOTOS = 5
+
+/** Las fotos de un ítem para guardar: las grandes en orden y la miniatura de la primera (null si no hay). */
+export interface PhotoSet {
+  full: string[]
+  thumb: string | null
 }

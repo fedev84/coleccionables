@@ -10,7 +10,7 @@ const list = (id: string, custom: CustomField[] = []): Collection => ({
 })
 const item = (p: Partial<Item>): Item => ({
   id: '1', listId: 'A', name: 'x', status: 'have', year: null, version: null, size: null, authenticity: null, customization: null,
-  url: null, description: null, price: null, place: null, extra: {}, thumb: 'data:image/jpeg;base64,T', createdAt: '', updatedAt: '', ...p,
+  url: null, description: null, price: null, place: null, extra: {}, goneAt: null, goneReason: null, thumb: 'data:image/jpeg;base64,T', createdAt: '', updatedAt: '', ...p,
 })
 const jugador: CustomField = { id: 'j1', label: 'Jugador', type: 'text' }
 

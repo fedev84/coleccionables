@@ -18,25 +18,26 @@ export interface CollectionRepository {
   upsertMany(lists: Collection[]): Promise<void>
 }
 
-/** Un ítem a guardar con su foto: undefined = no tocar la foto; null = borrarla. */
+/** Un ítem a guardar con sus fotos grandes, en orden (la primera es la principal). undefined = no tocarlas; [] = sin fotos. */
 export interface ItemWrite {
   item: Item
-  photo?: string | null
+  photos?: string[]
 }
 
 export interface ItemRepository {
   all(): Promise<Item[]>
   byList(listId: Id): Promise<Item[]>
   get(id: Id): Promise<Item | null>
-  /** Inserta o pisa por id. Con `photo` definido, también guarda (o borra, si es null) la foto grande. */
-  save(item: Item, photo?: string | null): Promise<void>
+  /** Inserta o pisa por id. Con `photos` definido, también reemplaza sus fotos grandes. */
+  save(item: Item, photos?: string[]): Promise<void>
   /** Varios en una sola transacción (import). */
   saveMany(writes: ItemWrite[]): Promise<void>
+  /** Borrado definitivo: el ítem y sus fotos, sin dejar copia en la base. */
   remove(id: Id): Promise<void>
-  /** Foto grande (data URL), o null. */
-  photo(id: Id): Promise<string | null>
+  /** Fotos grandes (data URLs), en orden; [] si no tiene. */
+  photos(id: Id): Promise<string[]>
   /** Todas las fotos grandes, por id de ítem (export). */
-  allPhotos(): Promise<Map<Id, string>>
+  allPhotos(): Promise<Map<Id, string[]>>
   /** Valores distintos ya usados en una columna de la lista, más usados primero. */
   usedValues(field: 'version' | 'size' | 'place', listId: Id): Promise<string[]>
 }

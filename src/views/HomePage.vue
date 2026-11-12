@@ -30,12 +30,12 @@ const reordering = ref(false)
 const search = ref('')
 const searching = computed(() => search.value.trim().length > 0)
 watch(searching, (on) => { if (on && !items.all) items.loadAll() })
-const results = computed(() => (searching.value ? applyView(items.all ?? [], DEFAULT_VIEW, search.value) : []))
+const results = computed(() => (searching.value ? applyView(items.all ?? [], { ...DEFAULT_VIEW, status: 'any' }, search.value) : []))
 const listOf = (i: Item) => lists.byId(i.listId)
 const emptyFields = defaultFields()
 
 const itemSheet = reactive({ open: false, item: null as Item | null })
-const viewer = reactive({ open: false, src: null as string | null, title: '' })
+const viewer = reactive({ open: false, photos: [] as string[], title: '' })
 
 const openList = (id: string) => router.push(`/lists/${id}`)
 
@@ -45,9 +45,9 @@ function openItem(item: Item) {
 }
 
 async function showPhoto(item: Item) {
-  viewer.src = await services().items.photo(item.id)
+  viewer.photos = await services().items.photos(item.id)
   viewer.title = item.name
-  viewer.open = !!viewer.src
+  viewer.open = viewer.photos.length > 0
 }
 
 function onReorder(e: ReorderEndCustomEvent) {
@@ -103,7 +103,7 @@ function onReorder(e: ReorderEndCustomEvent) {
               <span slot="start" class="emoji">{{ l.emoji }}</span>
               <ion-label>
                 <h2>{{ l.name }}</h2>
-                <p>{{ t.counts(l.have, l.want) }}</p>
+                <p>{{ t.counts(l.have, l.want, l.gone) }}</p>
               </ion-label>
               <ion-reorder slot="end" />
             </ion-item>
@@ -126,7 +126,7 @@ function onReorder(e: ReorderEndCustomEvent) {
         :item="itemSheet.item"
         @close="itemSheet.open = false"
       />
-      <PhotoViewer :open="viewer.open" :src="viewer.src" :title="viewer.title" @close="viewer.open = false" />
+      <PhotoViewer :open="viewer.open" :photos="viewer.photos" :title="viewer.title" @close="viewer.open = false" />
     </ion-content>
   </ion-page>
 </template>

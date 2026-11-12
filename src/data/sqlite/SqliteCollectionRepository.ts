@@ -5,7 +5,7 @@ import type { SqliteDb } from './SqliteDb'
 
 interface Row {
   id: string; name: string; emoji: string; fields: string | null; sort_order: number; created_at: string; updated_at: string
-  have?: number; want?: number
+  have?: number; want?: number; gone?: number
 }
 
 const toCollection = (r: Row): Collection => ({
@@ -35,11 +35,12 @@ export class SqliteCollectionRepository implements CollectionRepository {
     const rows = await this.db.query<Row>(`
       SELECT l.*,
         COALESCE(SUM(CASE WHEN i.status = 'have' THEN 1 ELSE 0 END), 0) AS have,
-        COALESCE(SUM(CASE WHEN i.status = 'want' THEN 1 ELSE 0 END), 0) AS want
+        COALESCE(SUM(CASE WHEN i.status = 'want' THEN 1 ELSE 0 END), 0) AS want,
+        COALESCE(SUM(CASE WHEN i.status = 'gone' THEN 1 ELSE 0 END), 0) AS gone
       FROM lists l LEFT JOIN items i ON i.list_id = l.id
       GROUP BY l.id
       ORDER BY l.sort_order, l.created_at`)
-    return rows.map((r) => ({ ...toCollection(r), have: r.have ?? 0, want: r.want ?? 0 }))
+    return rows.map((r) => ({ ...toCollection(r), have: r.have ?? 0, want: r.want ?? 0, gone: r.gone ?? 0 }))
   }
 
   async get(id: Id) {
@@ -74,7 +75,7 @@ export class SqliteCollectionRepository implements CollectionRepository {
 
   remove(id: Id) {
     return this.db.batch([
-      { sql: 'DELETE FROM photos WHERE item_id IN (SELECT id FROM items WHERE list_id = ?)', values: [id] },
+      { sql: 'DELETE FROM item_photos WHERE item_id IN (SELECT id FROM items WHERE list_id = ?)', values: [id] },
       { sql: 'DELETE FROM items WHERE list_id = ?', values: [id] },
       { sql: 'DELETE FROM lists WHERE id = ?', values: [id] },
     ])

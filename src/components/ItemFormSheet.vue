@@ -5,15 +5,16 @@ import {
 } from '@ionic/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { services } from '@/app/container'
-import type { Authenticity, Collection, Item, ItemStatus, Photo } from '@/domain/models'
+import { MAX_PHOTOS, type Authenticity, type Collection, type Item, type ItemStatus, type PhotoSet } from '@/domain/models'
 import { AUTHENTICITY_LABELS, isDefaultLabel, isShown, labelOf } from '@/domain/fields'
 import { BASE_SIZES, BASE_VERSIONS, suggest } from '@/domain/suggestions'
-import { ValidationError, normalizeUrl } from '@/domain/validation'
+import { ValidationError, normalizeUrl, today } from '@/domain/validation'
 import { formatNumber } from '@/domain/numbers'
 import { fold } from '@/domain/query'
-import { pickPhoto, type PhotoSource } from '@/platform/photos'
+import { pickPhotos, thumbOf, type PhotoSource } from '@/platform/photos'
 import { toast } from '@/platform/toast'
 import { useItemsStore } from '@/stores/items'
+import { useItemActions } from '@/composables/itemActions'
 import { t } from '@/copy/es'
 import PhotoViewer from './PhotoViewer.vue'
 import Thumb from './Thumb.vue'
@@ -22,10 +23,13 @@ const props = defineProps<{ open: boolean; list: Collection; item?: Item | null 
 const emit = defineEmits<{ close: [] }>()
 
 const items = useItemsStore()
+const { remove } = useItemActions()
 const form = reactive({
   name: '', status: 'have' as ItemStatus, year: '', version: '', size: '', price: '', place: '', url: '', description: '',
   authenticity: null as Authenticity | null,
   customization: '',
+  goneAt: '',
+  goneReason: '',
   extra: {} as Record<string, string>,
 })
 const errors = reactive<Record<string, string>>({})
@@ -33,11 +37,20 @@ const saving = ref(false)
 /** Lo que se edita: el ítem del prop, o null si es nuevo (también después de "Duplicar"). */
 const editing = ref<Item | null>(null)
 const duplicated = ref(false)
-/** undefined = la foto no cambió; null = se sacó; Photo = nueva. */
-const photo = ref<Photo | null | undefined>(undefined)
-const viewer = reactive({ open: false, src: null as string | null })
+/** Fotos en el orden en que quedan; la primera es la principal. La miniatura solo se conoce de las recién elegidas. */
+interface FormPhoto { full: string; thumb?: string }
+const photos = ref<FormPhoto[]>([])
+/** Si no se tocaron, al guardar no se reescriben. */
+const photosChanged = ref(false)
+/** Mientras cargan las fotos del ítem no se puede tocar la fila: se perderían las que faltan llegar. */
+let photosLoading: Promise<void> = Promise.resolve()
+const loadingPhotos = ref(false)
+const viewer = reactive({ open: false, photos: [] as string[], start: 0 })
 const nameInput = ref<InstanceType<typeof IonInput>>()
 const customizationInput = ref<InstanceType<typeof IonInput>>()
+
+// Al pasar a "Tuve" la fecha arranca en hoy; se puede cambiar.
+watch(() => form.status, (s) => { if (s === 'gone' && !form.goneAt) form.goneAt = today() })
 
 const cfg = computed(() => props.list.fields)
 const show = (f: Parameters<typeof isShown>[1]) => isShown(cfg.value, f)
@@ -62,18 +75,33 @@ watch(
       customization: i?.customization ?? '',
       url: i?.url ?? '',
       description: i?.description ?? '',
+      goneAt: i?.goneAt ?? '',
+      goneReason: i?.goneReason ?? '',
       extra: Object.fromEntries(props.list.fields.custom.map((f) => {
         const v = i?.extra[f.id]
         return [f.id, v == null ? '' : typeof v === 'number' ? formatNumber(v) : v]
       })),
     })
-    photo.value = undefined
+    photos.value = []
+    photosChanged.value = false
+    photosLoading = loadPhotos(i)
     Object.keys(errors).forEach((k) => delete errors[k])
     items.loadUsed(props.list.id)
   },
 )
 
-const thumb = computed(() => (photo.value === undefined ? (editing.value?.thumb ?? null) : (photo.value?.thumb ?? null)))
+async function loadPhotos(i: Item | null) {
+  if (!i?.thumb) return
+  loadingPhotos.value = true
+  try {
+    const full = await services().items.photos(i.id)
+    if (editing.value?.id === i.id) photos.value = full.map((f, n) => (n === 0 ? { full: f, thumb: i.thumb! } : { full: f }))
+  } finally {
+    loadingPhotos.value = false
+  }
+}
+
+const canAddPhoto = computed(() => photos.value.length < MAX_PHOTOS)
 // Las sugerencias de camisetas solo si el campo conserva su nombre de fábrica.
 const versions = computed(() => suggest(items.used.version, isDefaultLabel(cfg.value, 'version') ? BASE_VERSIONS : [], form.version))
 const sizes = computed(() => suggest(items.used.size, isDefaultLabel(cfg.value, 'size') ? BASE_SIZES : [], form.size))
@@ -90,56 +118,82 @@ const openableUrl = computed(() => {
 })
 const title = computed(() => (duplicated.value ? t.item.duplicateTitle : editing.value ? t.item.editTitle : t.item.newTitle))
 
-async function photoMenu() {
-  const buttons = [
-    { text: t.photo.camera, handler: () => { choose('camera') } },
-    { text: t.photo.gallery, handler: () => { choose('gallery') } },
-  ]
-  if (thumb.value) {
-    buttons.unshift({ text: t.photo.view, handler: () => { view() } })
-    buttons.push({ text: t.photo.remove, role: 'destructive', handler: () => { photo.value = null } } as never)
-  }
+function setPhotos(next: FormPhoto[]) {
+  photos.value = next
+  photosChanged.value = true
+}
+
+async function addPhotoMenu() {
+  if (loadingPhotos.value) return
+  if (!canAddPhoto.value) return toast(t.photo.full(MAX_PHOTOS))
   const sheet = await actionSheetController.create({
-    header: thumb.value ? t.photo.change : t.photo.add,
-    buttons: [...buttons, { text: t.common.cancel, role: 'cancel' } as never],
+    header: photos.value.length ? t.photo.more : t.photo.add,
+    buttons: [
+      { text: t.photo.camera, handler: () => { choose('camera') } },
+      { text: t.photo.gallery, handler: () => { choose('gallery') } },
+      { text: t.common.cancel, role: 'cancel' },
+    ],
+  })
+  await sheet.present()
+}
+
+async function photoMenu(n: number) {
+  const sheet = await actionSheetController.create({
+    header: n === 0 ? t.photo.main : t.photo.count(n + 1, photos.value.length),
+    buttons: [
+      { text: t.photo.view, handler: () => { view(n) } },
+      ...(n > 0 ? [{ text: t.photo.cover, handler: () => { setPhotos([photos.value[n], ...photos.value.filter((_, k) => k !== n)]) } }] : []),
+      { text: t.photo.remove, role: 'destructive', handler: () => { setPhotos(photos.value.filter((_, k) => k !== n)) } },
+      { text: t.common.cancel, role: 'cancel' },
+    ],
   })
   await sheet.present()
 }
 
 async function choose(source: PhotoSource) {
   try {
-    const picked = await pickPhoto(source)
-    if (picked) photo.value = picked
+    const picked = await pickPhotos(source, MAX_PHOTOS - photos.value.length)
+    if (picked.length) setPhotos([...photos.value, ...picked].slice(0, MAX_PHOTOS))
   } catch (e) {
     console.error(e)
     toast(t.photo.error)
   }
 }
 
-async function view() {
-  viewer.src = photo.value ? photo.value.full : editing.value ? await services().items.photo(editing.value.id) : null
-  viewer.open = !!viewer.src
+function view(n: number) {
+  viewer.photos = photos.value.map((p) => p.full)
+  viewer.start = n
+  viewer.open = true
 }
 
-/** "Misma camiseta, otra versión": el formulario pasa a ser un ítem nuevo con los mismos datos y la misma foto. */
+/** "Misma camiseta, otra versión": el formulario pasa a ser un ítem nuevo con los mismos datos y las mismas fotos. */
 async function duplicate() {
-  const source = editing.value
-  if (!source) return
-  if (photo.value === undefined && source.thumb) {
-    const full = await services().items.photo(source.id)
-    photo.value = full ? { full, thumb: source.thumb } : undefined
-  }
+  if (!editing.value) return
+  await photosLoading
+  photosChanged.value = photos.value.length > 0
   editing.value = null
   duplicated.value = true
+}
+
+/** La miniatura de la principal: la que ya había o, si cambió cuál es, una nueva. */
+async function photoSet(): Promise<PhotoSet> {
+  const first = photos.value[0]
+  return { full: photos.value.map((p) => p.full), thumb: first ? (first.thumb ?? (await thumbOf(first.full))) : null }
+}
+
+async function removeItem() {
+  if (editing.value && (await remove(editing.value))) emit('close')
 }
 
 async function save() {
   saving.value = true
   Object.keys(errors).forEach((k) => delete errors[k])
   try {
+    await photosLoading
     const input = { ...form, extra: { ...form.extra } }
-    if (editing.value) await items.update(props.list, editing.value, input, photo.value)
-    else await items.create(props.list, input, photo.value)
+    const change = photosChanged.value ? await photoSet() : undefined
+    if (editing.value) await items.update(props.list, editing.value, input, change)
+    else await items.create(props.list, input, change)
     emit('close')
   } catch (e) {
     if (e instanceof ValidationError) errors[e.field] = e.message
@@ -182,9 +236,19 @@ const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field]
       <form novalidate @submit.prevent="save">
         <p v-if="duplicated" class="hint">{{ t.item.duplicateHint }}</p>
 
-        <button type="button" class="photo" @click="photoMenu">
-          <Thumb :src="thumb" :fallback="list.emoji" :size="112" />
-          <span>{{ thumb ? t.photo.change : t.photo.add }}</span>
+        <div v-if="photos.length" class="photos">
+          <span class="choice-label">{{ t.photo.title(photos.length, MAX_PHOTOS) }}</span>
+          <div class="strip">
+            <button v-for="(p, n) in photos" :key="n" type="button" class="tile" @click="photoMenu(n)">
+              <img :src="p.thumb ?? p.full" alt="" />
+              <span v-if="n === 0" class="badge">{{ t.photo.main }}</span>
+            </button>
+            <button v-if="canAddPhoto" type="button" class="tile add" :aria-label="t.photo.more" @click="addPhotoMenu">＋</button>
+          </div>
+        </div>
+        <button v-else type="button" class="photo" :disabled="loadingPhotos" @click="addPhotoMenu">
+          <Thumb :src="editing?.thumb ?? null" :fallback="list.emoji" :size="112" />
+          <span>{{ t.photo.add }}</span>
         </button>
 
         <ion-input
@@ -203,7 +267,32 @@ const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field]
         <ion-segment v-model="form.status" class="status">
           <ion-segment-button value="have"><ion-label>{{ t.item.status.have }}</ion-label></ion-segment-button>
           <ion-segment-button value="want"><ion-label>{{ t.item.status.want }}</ion-label></ion-segment-button>
+          <ion-segment-button value="gone"><ion-label>{{ t.item.status.gone }}</ion-label></ion-segment-button>
         </ion-segment>
+
+        <template v-if="form.status === 'gone'">
+          <p class="hint">{{ t.item.goneHint }}</p>
+          <ion-input
+            v-model="form.goneReason"
+            class="field"
+            fill="solid"
+            :label="t.item.goneReason"
+            label-placement="stacked"
+            :placeholder="t.item.goneReasonPh"
+            autocapitalize="sentences"
+          />
+          <div class="chips">
+            <button
+              v-for="c in t.item.goneChips"
+              :key="c"
+              type="button"
+              class="chip"
+              :class="{ on: form.goneReason === c }"
+              @click="form.goneReason = c"
+            >{{ c }}</button>
+          </div>
+          <ion-input v-model="form.goneAt" class="field" fill="solid" type="date" :max="today()" :label="t.item.goneAt" label-placement="stacked" />
+        </template>
 
         <ion-input
           v-if="show('year')"
@@ -329,8 +418,9 @@ const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field]
         />
 
         <ion-button v-if="editing" fill="outline" expand="block" class="duplicate" @click="duplicate">{{ t.item.duplicate }}</ion-button>
+        <ion-button v-if="editing" fill="clear" color="danger" expand="block" class="delete" @click="removeItem">{{ t.item.delete }}</ion-button>
       </form>
-      <PhotoViewer :open="viewer.open" :src="viewer.src" :title="form.name" @close="viewer.open = false" />
+      <PhotoViewer :open="viewer.open" :photos="viewer.photos" :start="viewer.start" :title="form.name" @close="viewer.open = false" />
     </ion-content>
   </ion-modal>
 </template>
@@ -380,5 +470,33 @@ const invalid = (field: string) => ({ 'ion-invalid ion-touched': !!errors[field]
   color: var(--ion-color-primary);
   text-decoration: none;
 }
-.duplicate { margin: 8px 0 24px; }
+.duplicate { margin: 8px 0 4px; }
+.delete { margin: 0 0 24px; }
+.photos { margin: 0 0 16px; }
+.strip { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.strip::-webkit-scrollbar { display: none; }
+.tile {
+  position: relative;
+  flex: none;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--app-surface-2);
+}
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile.add { font-size: 32px; color: var(--ion-color-primary); border-style: dashed; }
+.badge {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
 </style>

@@ -87,12 +87,14 @@ async function filterMenu(facet: (typeof facets.value)[number]) {
 }
 
 const rows = computed(() => applyView(all.value, view.value, search.value, fields.value, filters.value))
-const filtered = computed(() => rows.value.length !== all.value.length)
+/** Cuántos hay en el estado elegido (Todos / Tengo / …): "x de y" aparece solo si la búsqueda o un filtro esconde algo. */
+const inStatus = computed(() => applyView(all.value, view.value, '', fields.value).length)
+const filtered = computed(() => rows.value.length !== inStatus.value)
 const sortLabel = computed(() => `${sortName(view.value.sort, fields.value)} (${dirName(view.value.sort, fields.value, view.value.dir)})`)
 
 const itemSheet = reactive({ open: false, item: null as Item | null })
 const listSheet = ref(false)
-const viewer = reactive({ open: false, src: null as string | null, title: '' })
+const viewer = reactive({ open: false, photos: [] as string[], title: '' })
 
 // ---------- Elegir varios y moverlos a otra lista ----------
 const selecting = ref(false)
@@ -165,7 +167,7 @@ async function moveTo(moving: Item[], from: Collection, to: Collection) {
   try {
     const snapshot = await items.move(moving, from, to)
     stopSelecting()
-    toast(t.select.moved(snapshot.items.length, `${to.emoji} ${to.name}`), () => items.undoMove(snapshot))
+    toast(t.select.moved(snapshot.items.length, `${to.emoji} ${to.name}`, snapshot.renamed), () => items.undoMove(snapshot))
   } catch (e) {
     console.error(e)
     toast(t.select.error)
@@ -183,9 +185,9 @@ function openItem(item: Item | null) {
 }
 
 async function showPhoto(item: Item) {
-  viewer.src = await services().items.photo(item.id)
+  viewer.photos = await services().items.photos(item.id)
   viewer.title = item.name
-  viewer.open = !!viewer.src
+  viewer.open = viewer.photos.length > 0
 }
 
 const setStatus = (status: StatusFilter) => views.set(props.id, { status })
@@ -306,14 +308,16 @@ async function confirmDelete() {
 
     <ion-content v-if="list">
       <template v-if="all.length">
-        <ion-segment :value="view.status" class="filter" @ion-change="setStatus($event.detail.value as StatusFilter)">
+        <ion-segment :value="view.status" class="filter" :class="{ four: list.gone || view.status === 'gone' }" @ion-change="setStatus($event.detail.value as StatusFilter)">
           <ion-segment-button value="all"><ion-label>{{ t.list.filter.all }} · {{ list.have + list.want }}</ion-label></ion-segment-button>
           <ion-segment-button value="have"><ion-label>{{ t.list.filter.have }} · {{ list.have }}</ion-label></ion-segment-button>
           <ion-segment-button value="want"><ion-label>{{ t.list.filter.want }} · {{ list.want }}</ion-label></ion-segment-button>
+          <!-- "Tuve" solo aparece si hay alguna: en la mayoría de las listas sería un botón vacío. -->
+          <ion-segment-button v-if="list.gone || view.status === 'gone'" value="gone"><ion-label>{{ t.list.filter.gone }} · {{ list.gone }}</ion-label></ion-segment-button>
         </ion-segment>
         <div class="bar">
           <button class="sort" @click="sortMenu"><ion-icon :icon="swapVerticalOutline" />{{ sortLabel }}</button>
-          <span v-if="filtered" class="muted">{{ t.list.shown(rows.length, all.length) }}</span>
+          <span v-if="filtered" class="muted">{{ t.list.shown(rows.length, inStatus) }}</span>
         </div>
         <div v-if="facets.length" class="chips">
           <ion-chip
@@ -363,13 +367,17 @@ async function confirmDelete() {
 
       <ItemFormSheet :open="itemSheet.open" :list="list" :item="itemSheet.item" @close="itemSheet.open = false" />
       <ListFormSheet :open="listSheet" :list="list" @close="listSheet = false" />
-      <PhotoViewer :open="viewer.open" :src="viewer.src" :title="viewer.title" @close="viewer.open = false" />
+      <PhotoViewer :open="viewer.open" :photos="viewer.photos" :title="viewer.title" @close="viewer.open = false" />
     </ion-content>
   </ion-page>
 </template>
 
 <style scoped>
 .filter { margin: 12px 16px 4px; width: auto; }
+/* Con "Tuve" son 4: que cada botón tome el ancho de su texto en vez de cortarlo con "…". */
+.filter ion-segment-button { min-width: 0; --padding-start: 6px; --padding-end: 6px; }
+.filter ion-label { overflow: visible; text-overflow: clip; white-space: nowrap; }
+.filter.four ion-segment-button { flex: 1 1 auto; font-size: 13px; }
 .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 16px 8px; font-size: 14px; }
 .sort {
   display: inline-flex;

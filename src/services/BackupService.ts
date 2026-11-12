@@ -1,6 +1,6 @@
 import type { CollectionRepository, ItemRepository } from '@/data/ports'
 import type { Collection } from '@/domain/models'
-import { buildBackup, parseBackup, planImport, serializeBackup, type ImportPlan } from '@/domain/backup'
+import { buildBackup, parseBackup, planImport, resolveImport, serializeBackup, type ImportPlan } from '@/domain/backup'
 import { buildCsv } from '@/domain/csv'
 
 export type { ImportPlan }
@@ -27,9 +27,10 @@ export class BackupService {
     return planImport(parseBackup(text), await this.localLists(), await this.items.all())
   }
 
-  async applyImport(plan: ImportPlan): Promise<void> {
+  /** `choices`: por cada conflicto del plan, con cuál quedarse (si falta, el sugerido). */
+  async applyImport(plan: ImportPlan, choices: ('phone' | 'backup')[] = []): Promise<void> {
     // Listas primero: los ítems las referencian.
     await this.lists.upsertMany(plan.lists)
-    await this.items.saveMany(plan.items)
+    await this.items.saveMany(resolveImport(plan, choices))
   }
 }

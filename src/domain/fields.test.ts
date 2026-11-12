@@ -8,7 +8,7 @@ import { ValidationError, cleanExtra, parsePrice } from './validation'
 
 const item = (p: Partial<Item>): Item => ({
   id: '1', listId: 'l', name: 'x', status: 'have', year: null, version: null, size: null, url: null, description: null,
-  price: null, place: null, authenticity: null, customization: null, extra: {}, thumb: null, createdAt: '', updatedAt: '', ...p,
+  price: null, place: null, authenticity: null, customization: null, extra: {}, goneAt: null, goneReason: null, thumb: null, createdAt: '', updatedAt: '', ...p,
 })
 
 describe('parseNumber', () => {

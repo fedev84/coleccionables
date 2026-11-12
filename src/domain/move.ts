@@ -5,16 +5,20 @@
  */
 import type { Collection, Item, Timestamp } from './models'
 import type { CustomField, FieldConfig } from './fields'
+import { identityKey, uniqueName } from './identity'
 
 export interface MovePlan {
   items: Item[]
+  /** Cuántos cambiaron de nombre ("… (2)") porque en la lista destino ya había uno igual. */
+  renamed: number
   /** La configuración nueva de la lista destino, o null si no cambia. */
   fields: FieldConfig | null
 }
 
 const sameField = (a: CustomField, b: CustomField) => a.type === b.type && a.label.trim().toLowerCase() === b.label.trim().toLowerCase()
 
-export function planMove(items: Item[], from: Collection, to: Collection, ts: Timestamp): MovePlan {
+/** `targetItems`: lo que ya hay en la lista destino, para no repetir nombre + año + versión. */
+export function planMove(items: Item[], from: Collection, to: Collection, ts: Timestamp, targetItems: Item[] = []): MovePlan {
   const moving = items.filter((i) => i.listId === from.id && from.id !== to.id)
   const used = from.fields.custom.filter((f) => moving.some((i) => i.extra[f.id] != null))
   const added: CustomField[] = []
@@ -28,13 +32,22 @@ export function planMove(items: Item[], from: Collection, to: Collection, ts: Ti
       target.set(f.id, f.id)
     }
   }
+  const taken = new Set(targetItems.filter((i) => i.listId === to.id).map(identityKey))
+  let renamed = 0
   return {
-    items: moving.map((i) => ({
-      ...i,
-      listId: to.id,
-      extra: Object.fromEntries(Object.entries(i.extra).map(([k, v]) => [target.get(k) ?? k, v])),
-      updatedAt: ts,
-    })),
+    items: moving.map((i) => {
+      const name = uniqueName(i, taken)
+      if (name !== i.name) renamed++
+      taken.add(identityKey({ ...i, name }))
+      return {
+        ...i,
+        name,
+        listId: to.id,
+        extra: Object.fromEntries(Object.entries(i.extra).map(([k, v]) => [target.get(k) ?? k, v])),
+        updatedAt: ts,
+      }
+    }),
+    renamed,
     fields: added.length ? { ...to.fields, custom: [...to.fields.custom, ...added] } : null,
   }
 }

@@ -4,6 +4,7 @@ import { checkmarkCircle, checkmarkCircleOutline, ellipseOutline, linkOutline, s
 import { computed, ref } from 'vue'
 import type { Item } from '@/domain/models'
 import { itemLine } from '@/domain/itemLine'
+import { formatDay } from '@/domain/dates'
 import { isShown, type FieldConfig } from '@/domain/fields'
 import { t } from '@/copy/es'
 import Thumb from './Thumb.vue'
@@ -15,7 +16,11 @@ import Thumb from './Thumb.vue'
 const props = defineProps<{ item: Item; fallback: string; fields: FieldConfig; context?: string; selecting?: boolean; selected?: boolean }>()
 const emit = defineEmits<{ open: []; photo: []; toggle: []; remove: []; select: [] }>()
 const sliding = ref<InstanceType<typeof IonItemSliding>>()
-const line = computed(() => [props.context, itemLine(props.item, props.fields)].filter(Boolean).join(' · '))
+const gone = computed(() => props.item.status === 'gone')
+/** En "Tuve", primero por qué y desde cuándo: "Regalada · 12/03/2025 · 1990 · Titular". */
+const goneInfo = computed(() =>
+  gone.value ? [props.item.goneReason, props.item.goneAt && formatDay(props.item.goneAt)].filter(Boolean).join(' · ') : '')
+const line = computed(() => [props.context, goneInfo.value, itemLine(props.item, props.fields)].filter(Boolean).join(' · '))
 const want = computed(() => props.item.status === 'want')
 const hasUrl = computed(() => !!props.item.url && isShown(props.fields, 'url'))
 
@@ -55,7 +60,8 @@ async function act(fn: () => void) {
 
 <template>
   <ion-item-sliding ref="sliding" :disabled="selecting">
-    <ion-item-options side="start" @ion-swipe="act(() => emit('toggle'))">
+    <!-- Tengo ⇄ Me falta deslizando; "Tuve" se cambia desde la ficha, para no marcarlo sin querer. -->
+    <ion-item-options v-if="!gone" side="start" @ion-swipe="act(() => emit('toggle'))">
       <ion-item-option :color="want ? 'success' : 'medium'" expandable @click="act(() => emit('toggle'))">
         <ion-icon slot="start" :icon="want ? checkmarkCircleOutline : searchOutline" />
         {{ want ? t.list.markHave : t.list.markWant }}
@@ -64,7 +70,7 @@ async function act(fn: () => void) {
 
     <ion-item
       class="row"
-      :class="{ want, selected }"
+      :class="{ want, gone, selected }"
       :detail="false"
       button
       @click="tap('open')"
@@ -82,6 +88,7 @@ async function act(fn: () => void) {
         <div class="top">
           <span class="name">{{ item.name }}</span>
           <span v-if="want" class="tag">{{ t.list.want }}</span>
+          <span v-else-if="gone" class="tag gone">{{ t.list.filter.gone }}</span>
         </div>
         <div v-if="line || hasUrl" class="line muted">
           <ion-icon v-if="hasUrl" :icon="linkOutline" class="link" />{{ line }}
@@ -112,8 +119,10 @@ async function act(fn: () => void) {
 .body { min-width: 0; flex: 1; padding: 8px 0; }
 .top { display: flex; align-items: center; gap: 8px; }
 .name { font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.want .name { color: var(--app-muted); }
+.want .name, .gone .name { color: var(--app-muted); }
 .want :deep(.thumb img) { opacity: 0.55; }
+/* "Tuve": más apagada que "me falta", en gris: es historial. */
+.gone :deep(.thumb img) { opacity: 0.45; filter: grayscale(1); }
 .tag {
   flex: none;
   font-size: 11px;
@@ -123,6 +132,7 @@ async function act(fn: () => void) {
   color: var(--ion-color-warning-shade, #b45309);
   background: rgba(var(--ion-color-warning-rgb, 245, 158, 11), 0.18);
 }
+.tag.gone { color: var(--app-muted); background: var(--app-surface-2); }
 .line { font-size: 14px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link { vertical-align: -2px; margin-right: 4px; }
 .check { font-size: 26px; color: var(--app-muted); margin-left: 8px; }

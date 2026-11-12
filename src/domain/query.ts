@@ -2,7 +2,8 @@
 import type { Item, ItemStatus } from './models'
 import { AUTHENTICITY_LABELS, BUILTIN_FIELDS, defaultFields, isShown, type BuiltinField, type FieldConfig } from './fields'
 
-export type StatusFilter = 'all' | ItemStatus
+/** all = tu colección (tengo + me falta); any = también lo que tuviste (búsqueda global). */
+export type StatusFilter = 'all' | 'any' | ItemStatus
 type BaseSortField = 'name' | 'createdAt' | 'updatedAt'
 /** Los campos propios se ordenan como `x:<id>`. */
 /** Los textos libres (link, personalización, descripción) no tienen un orden que sirva. */
@@ -43,7 +44,7 @@ export const defaultDir = (f: SortField): SortDir => (f === 'createdAt' || f ===
 export const fold = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 const haystack = (i: Item) =>
-  fold([i.name, i.description, i.version, i.size, i.authenticity && AUTHENTICITY_LABELS[i.authenticity], i.customization, i.year, i.place, i.price, ...Object.values(i.extra)].filter((v) => v != null).join(' '))
+  fold([i.name, i.goneReason, i.description, i.version, i.size, i.authenticity && AUTHENTICITY_LABELS[i.authenticity], i.customization, i.year, i.place, i.price, ...Object.values(i.extra)].filter((v) => v != null).join(' '))
 
 /** Cada palabra buscada tiene que aparecer en algún campo, en cualquier orden. */
 export function matches(item: Item, text: string): boolean {
@@ -116,11 +117,13 @@ export function filterOptions(items: Item[], f: FilterField): FilterOption[] {
 export const matchesFilters = (item: Item, filters: Filters) =>
   Object.entries(filters).every(([f, key]) => filterKey(valueOf(item, f as FilterField)) === key)
 
+const statusMatches = (i: Item, s: StatusFilter) => (s === 'any' ? true : s === 'all' ? i.status !== 'gone' : i.status === s)
+
 export function applyView(items: Item[], view: ListView, text = '', cfg: FieldConfig = defaultFields(), filters: Filters = {}): Item[] {
   const { status, sort, dir } = resolveView(view, cfg)
   const sign = dir === 'asc' ? 1 : -1
   return items
-    .filter((i) => (status === 'all' || i.status === status) && matches(i, text) && matchesFilters(i, filters))
+    .filter((i) => statusMatches(i, status) && matches(i, text) && matchesFilters(i, filters))
     .sort((a, b) => {
       const va = valueOf(a, sort)
       const vb = valueOf(b, sort)
@@ -141,7 +144,7 @@ export function parseView(raw: string | null): ListView {
     const v = JSON.parse(raw ?? '{}') as Partial<ListView>
     const sort = typeof v.sort === 'string' && (KNOWN.includes(v.sort) || v.sort.startsWith('x:')) ? v.sort : DEFAULT_VIEW.sort
     return {
-      status: v.status === 'have' || v.status === 'want' ? v.status : 'all',
+      status: v.status === 'have' || v.status === 'want' || v.status === 'gone' ? v.status : 'all',
       sort,
       dir: v.dir === 'desc' ? 'desc' : 'asc',
     }

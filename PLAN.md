@@ -6,13 +6,14 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 
 **Lista**: nombre, emoji (opcional), orden en el home.
 
-**Ítem**: nombre y estado siempre; el resto son campos fijos que cada lista puede ocultar o renombrar, más campos propios (texto o número) en "Campos de la lista".
+**Ítem**: nombre y estado siempre. En una lista no se repite **nombre + año + versión** (sin importar mayúsculas ni tildes); el resto son campos fijos que cada lista puede ocultar o renombrar, más campos propios (texto o número) en "Campos de la lista".
 
 | Campo | Tipo | Nota |
 |---|---|---|
 | Nombre | texto, **obligatorio** | Lo que se ve en negrita en la lista |
-| Estado | **Tengo / Me falta** | Pasar de "falta" a "tengo" con un toque |
-| Foto | imagen comprimida | Cámara o galería; grande aparte + miniatura para la lista |
+| Estado | **Tengo / Me falta / Tuve** | Tengo ⇄ Me falta deslizando. "Tuve" (`gone`) se marca desde la ficha |
+| Tuve: desde / por qué | fecha AAAA-MM-DD + texto con atajos | Solo con estado "Tuve" (`gone_at`, `gone_reason`). Regalada, Vendida, Cambiada, Se rompió, Se perdió |
+| Fotos | hasta 5 imágenes comprimidas | Cámara o galería (varias a la vez). Tabla `item_photos` (ítem, posición, foto grande); la primera es la principal y su miniatura va en `items.thumb` |
 | Año de salida | número | |
 | Versión | texto + sugerencias | Titular, Suplente, Alternativa, Arquero, Retro… |
 | Tamaño | texto + sugerencias | S, M, L, XL… (texto libre por si es otra cosa) |
@@ -80,6 +81,10 @@ App Android liviana para organizar colecciones (empezando por camisetas de fútb
 - **Ícono de lista libre** ✅ (2026-10-23): 24 emojis + "Otro" (cualquier emoji del teclado).
 - **Mover ítems a otra lista** ✅ (2026-10-23): mantener apretado (o ⋮ → "Mover a otra lista"), elegir varios o "Todos", y mandarlos a otra lista o a una nueva. Con "Deshacer".
 - **Filtros por campo** ✅ (2026-11-04): debajo del orden, un chip por campo (año, versión, talle, original o réplica, dónde lo compré y los propios). Muestra los valores con cuántos hay, incluido "Sin dato"; se combinan entre sí y con la búsqueda. El buscador de texto ya buscaba en todos los campos.
+- **Borrar definitivo** ✅ (2026-11-12): desde la ficha (botón Borrar) o deslizando en la lista. Pide confirmación, avisa que no se puede deshacer y no deja copia en la base (`secure_delete`). Ya no hay "Deshacer" al borrar.
+- **Hasta 5 fotos** ✅ (2026-11-12): en la ficha, fila de fotos con ＋; tocando una: ver, usar como principal o quitar. De la galería se eligen varias a la vez. El visor pasa las fotos deslizando, con flechas a los costados o con ← →. Backup: `photo` (principal) + `morePhotos`. Probado en el navegador; en el emulador solo que la app abre y migra (falta probar elegir varias de la galería en el teléfono).
+- **Tuve** ✅ (2026-11-12): tercer estado para lo que ya no tenés (con fecha y motivo), sin perder el historial. En la lista: Todos (tengo + me falta) · Tengo · Me falta · Tuve (este último solo si hay alguna). No cuenta al compartir; la búsqueda global sí la encuentra.
+- **Sin repetidos** ✅ (2026-11-12): nombre + año + versión no se repite en una lista. El formulario avisa; al mover, el que choca entra como "… (2)"; al importar, un ítem distinto en el teléfono y en el backup se elige en "¿Cuál queda?" (sugiere el editado más recientemente) y uno nuevo que chocaría entra como "… (2)". Backup versión 2: una app vieja lo rechaza en vez de importarlo mal.
 
 ## Ideas para después (no se hacen salvo que lo pidas)
 - Elegir qué incluir en la imagen (por ejemplo, sumar el precio).

@@ -1,5 +1,5 @@
 import type { CustomField } from './fields'
-import type { Authenticity, ItemInput, NewCollectionInput } from './models'
+import type { Authenticity, ItemInput, ItemStatus, NewCollectionInput } from './models'
 import { parseNumber } from './numbers'
 import { isEmoji } from './suggestions'
 
@@ -58,9 +58,25 @@ export function parseAuthenticity(raw: unknown): Authenticity | null {
   return v === 'original' || v === 'replica' ? v : null
 }
 
+export const parseStatus = (raw: unknown): ItemStatus => (raw === 'want' || raw === 'gone' ? raw : 'have')
+
+/** Hoy en AAAA-MM-DD, en la hora local (no UTC: a la noche sería mañana). */
+export function today(now = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
+}
+
+/** Una fecha AAAA-MM-DD que exista; si no, null. */
+export function parseDay(raw: unknown): string | null {
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) return null
+  const v = raw.trim()
+  const d = new Date(`${v}T00:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : null
+}
+
 export interface CleanItem {
   name: string
-  status: ItemInput['status']
+  status: ItemStatus
   year: number | null
   version: string | null
   size: string | null
@@ -71,6 +87,8 @@ export interface CleanItem {
   price: number | null
   place: string | null
   extra: Record<string, string | number>
+  goneAt: string | null
+  goneReason: string | null
 }
 
 /** Solo se guardan los campos propios que la lista tiene; los vacíos no se guardan. */
@@ -93,9 +111,14 @@ export function cleanExtra(raw: Record<string, string | number> | undefined, cus
 export function validateItem(input: ItemInput, custom: CustomField[] = []): CleanItem {
   const name = clean(input.name)
   if (!name) throw new ValidationError('name', 'Ponele un nombre')
+  const status = parseStatus(input.status)
+  const gone = status === 'gone'
   return {
     name,
-    status: input.status === 'want' ? 'want' : 'have',
+    status,
+    // Fuera de "Tuve" no se guardan: si la recuperás, vuelve a ser una pieza más.
+    goneAt: gone ? (parseDay(input.goneAt) ?? today()) : null,
+    goneReason: gone ? clean(input.goneReason) : null,
     year: parseYear(input.year),
     version: clean(input.version),
     size: clean(input.size),

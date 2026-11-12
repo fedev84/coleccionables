@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   IonBackButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage,
-  IonSpinner, IonTitle, IonToolbar, alertController,
+  IonSpinner, IonTitle, IonToolbar, alertController, modalController,
 } from '@ionic/vue'
 import { cloudDownloadOutline, cloudUploadOutline, documentTextOutline, imagesOutline } from 'ionicons/icons'
 import { ref } from 'vue'
@@ -12,6 +12,7 @@ import { toast } from '@/platform/toast'
 import { useItemsStore } from '@/stores/items'
 import { useListsStore } from '@/stores/lists'
 import { t } from '@/copy/es'
+import ImportConflictsSheet from '@/components/ImportConflictsSheet.vue'
 
 type Action = 'full' | 'light' | 'csv' | 'import'
 const busy = ref<Action | null>(null)
@@ -47,18 +48,28 @@ const importBackup = () =>
     const text = await pickTextFile()
     if (text === null) return
     const plan = await services().backup.previewImport(text)
-    if (!plan.lists.length && !plan.items.length) return toast(t.data.nothing)
+    if (!plan.lists.length && !plan.items.length && !plan.conflicts.length) return toast(t.data.nothing)
 
-    const alert = await alertController.create({
-      header: t.data.confirmTitle,
-      message: t.data.summary(plan.summary),
-      cssClass: 'pre-line',
-      buttons: [{ text: t.common.cancel, role: 'cancel' }, { text: t.data.confirm, role: 'confirm' }],
-    })
-    await alert.present()
-    if ((await alert.onDidDismiss()).role !== 'confirm') return
+    let choices: ('phone' | 'backup')[] = []
+    if (plan.conflicts.length) {
+      // Hay piezas distintas en el teléfono y en el backup: se elige una por una (ver ImportConflictsSheet).
+      const modal = await modalController.create({ component: ImportConflictsSheet, componentProps: { plan } })
+      await modal.present()
+      const { role, data } = await modal.onDidDismiss()
+      if (role !== 'confirm') return
+      choices = data
+    } else {
+      const alert = await alertController.create({
+        header: t.data.confirmTitle,
+        message: t.data.summary(plan.summary),
+        cssClass: 'pre-line',
+        buttons: [{ text: t.common.cancel, role: 'cancel' }, { text: t.data.confirm, role: 'confirm' }],
+      })
+      await alert.present()
+      if ((await alert.onDidDismiss()).role !== 'confirm') return
+    }
 
-    await services().backup.applyImport(plan)
+    await services().backup.applyImport(plan, choices)
     useItemsStore().reset()
     await useListsStore().load()
     toast(t.data.imported)

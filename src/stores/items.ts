@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { services } from '@/app/container'
 import type { MoveSnapshot, PhotoChange } from '@/services/ItemService'
-import type { Collection, Id, Item, ItemInput, ItemSnapshot, ItemStatus } from '@/domain/models'
+import type { Collection, Id, Item, ItemInput, ItemStatus } from '@/domain/models'
 import { useListsStore } from './lists'
 
 export const useItemsStore = defineStore('items', () => {
@@ -52,15 +52,9 @@ export const useItemsStore = defineStore('items', () => {
     await refresh(item.listId)
   }
 
-  async function remove(item: Item): Promise<ItemSnapshot> {
-    const snapshot = await services().items.remove(item)
+  async function remove(item: Item) {
+    await services().items.remove(item)
     await refresh(item.listId)
-    return snapshot
-  }
-
-  async function restore(snapshot: ItemSnapshot) {
-    await services().items.restore(snapshot)
-    await refresh(snapshot.item.listId)
   }
 
   async function move(moving: Item[], from: Collection, to: Collection): Promise<MoveSnapshot> {
@@ -75,5 +69,5 @@ export const useItemsStore = defineStore('items', () => {
     await Promise.all([refresh(snapshot.to), ...from.map(load)])
   }
 
-  return { move, undoMove, byList, used, all, load, loadAll, reset, loadUsed, create, update, setStatus, remove, restore }
+  return { move, undoMove, byList, used, all, load, loadAll, reset, loadUsed, create, update, setStatus, remove }
 })
