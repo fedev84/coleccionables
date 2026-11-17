@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import {
-  IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList,
+  IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonList,
   IonPage, IonReorder, IonReorderGroup, IonSearchbar, IonTitle, IonToolbar, useIonRouter, type ReorderEndCustomEvent,
 } from '@ionic/vue'
 import { add, folderOpenOutline } from 'ionicons/icons'
 import { computed, reactive, ref, watch } from 'vue'
 import { services } from '@/app/container'
-import type { Item } from '@/domain/models'
+import type { CollectionWithCounts, Item } from '@/domain/models'
 import { DEFAULT_VIEW, applyView } from '@/domain/query'
 import { defaultFields } from '@/domain/fields'
 import { useItemActions } from '@/composables/itemActions'
 import { useItemsStore } from '@/stores/items'
 import { useListsStore } from '@/stores/lists'
 import { t } from '@/copy/es'
+import { tintsOf } from '@/theme/tints'
 import EmptyState from '@/components/EmptyState.vue'
 import ItemFormSheet from '@/components/ItemFormSheet.vue'
 import ItemRow from '@/components/ItemRow.vue'
@@ -38,6 +39,8 @@ const itemSheet = reactive({ open: false, item: null as Item | null })
 const viewer = reactive({ open: false, photos: [] as string[], title: '' })
 
 const openList = (id: string) => router.push(`/lists/${id}`)
+const tints = computed(() => tintsOf(lists.lists))
+const progress = (l: CollectionWithCounts) => (l.have + l.want ? Math.round((l.have / (l.have + l.want)) * 100) : 0)
 
 function openItem(item: Item) {
   itemSheet.item = item
@@ -97,14 +100,30 @@ function onReorder(e: ReorderEndCustomEvent) {
       </template>
 
       <template v-else>
-        <ion-list v-if="lists.lists.length">
+        <ion-list v-if="lists.lists.length" class="cards">
           <ion-reorder-group :disabled="!reordering" @ion-reorder-end="onReorder">
-            <ion-item v-for="l in lists.lists" :key="l.id" :button="!reordering" :detail="!reordering" @click="!reordering && openList(l.id)">
-              <span slot="start" class="emoji">{{ l.emoji }}</span>
-              <ion-label>
-                <h2>{{ l.name }}</h2>
+            <ion-item
+              v-for="l in lists.lists"
+              :key="l.id"
+              class="card"
+              :class="tints[l.id]"
+              lines="none"
+              :button="!reordering"
+              :detail="false"
+              @click="!reordering && openList(l.id)"
+            >
+              <div class="card-body">
+                <div class="card-top">
+                  <span class="emoji">{{ l.emoji }}</span>
+                  <h2>{{ l.name }}</h2>
+                  <span class="total">{{ l.have + l.want }}</span>
+                </div>
+                <!-- Avance: cuánto de la lista ya tenés ("Tuve" no cuenta, es historial). -->
+                <div class="bar" role="progressbar" :aria-valuenow="progress(l)" aria-valuemin="0" aria-valuemax="100">
+                  <span :style="{ width: `${progress(l)}%` }" />
+                </div>
                 <p>{{ t.counts(l.have, l.want, l.gone) }}</p>
-              </ion-label>
+              </div>
               <ion-reorder slot="end" />
             </ion-item>
           </ion-reorder-group>
@@ -132,17 +151,42 @@ function onReorder(e: ReorderEndCustomEvent) {
 </template>
 
 <style scoped>
-.emoji {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  font-size: 24px;
-  border-radius: 10px;
-  background: var(--app-surface-2);
-  margin-inline-end: 12px;
+.cards { padding: 8px 16px; background: transparent; }
+.card {
+  --background: var(--tint-bg);
+  --color: var(--ion-text-color);
+  --border-radius: 20px;
+  --padding-start: 16px;
+  --inner-padding-end: 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
 }
-ion-label h2 { font-weight: 600; }
+.card-body { flex: 1; min-width: 0; padding: 14px 0; }
+.card-top { display: flex; align-items: center; gap: 10px; }
+.emoji { font-size: 24px; line-height: 1; }
+h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--app-font-display);
+  font-size: 19px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.total {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: var(--tint-ink);
+  background: color-mix(in srgb, var(--app-surface) 70%, transparent);
+}
+.bar { height: 6px; margin: 12px 0 6px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--app-surface) 70%, transparent); }
+.bar span { display: block; height: 100%; border-radius: 999px; background: var(--tint-bar); transition: width 0.3s; }
+.card-body p { margin: 0; font-size: 13px; color: var(--tint-ink); }
 .count { margin: 12px 16px 4px; font-size: 14px; }
 .results { padding: 0; }
 .end-space { height: 32px; }

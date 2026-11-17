@@ -7,6 +7,7 @@ import '@ionic/vue/css/normalize.css'
 import '@ionic/vue/css/structure.css'
 import '@ionic/vue/css/typography.css'
 import '@ionic/vue/css/palettes/dark.system.css'
+import '@fontsource-variable/fraunces/wght.css'
 import './theme/variables.css'
 import './theme/global.css'
 

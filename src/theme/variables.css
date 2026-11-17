@@ -1,24 +1,26 @@
 /* Tokens de la app. Ionic lee sus --ion-*; los nuestros van con --app-*. */
 :root {
   --ion-font-family: system-ui, -apple-system, 'Roboto', sans-serif;
+  /* Títulos con serif: la estética "Álbum". La fuente va dentro de la app (anda sin internet). */
+  --app-font-display: 'Fraunces Variable', Georgia, serif;
 
-  --ion-color-primary: #15803d;
-  --ion-color-primary-rgb: 21, 128, 61;
+  --ion-color-primary: #c2410c;
+  --ion-color-primary-rgb: 194, 65, 12;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #166534;
-  --ion-color-primary-tint: #16a34a;
+  --ion-color-primary-shade: #9a3412;
+  --ion-color-primary-tint: #ea580c;
 
-  --ion-background-color: #f6f7f6;
-  --ion-background-color-rgb: 246, 247, 246;
-  --ion-text-color: #18181b;
-  --ion-text-color-rgb: 24, 24, 27;
+  --ion-background-color: #fbf7f2;
+  --ion-background-color-rgb: 251, 247, 242;
+  --ion-text-color: #2a2320;
+  --ion-text-color-rgb: 42, 35, 32;
 
   --app-surface: #ffffff;
-  --app-surface-2: #eceeec;
-  --app-muted: #71717a;
-  --app-border: rgba(24, 24, 27, 0.08);
-  --app-radius: 14px;
+  --app-surface-2: #f1ebe3;
+  --app-muted: #7a6f66;
+  --app-border: rgba(42, 35, 32, 0.09);
+  --app-radius: 18px;
 
   --ion-toolbar-background: var(--ion-background-color);
   --ion-toolbar-border-color: transparent;
@@ -26,20 +28,40 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ion-color-primary: #4ade80;
-    --ion-color-primary-rgb: 74, 222, 128;
-    --ion-color-primary-contrast: #052e16;
-    --ion-color-primary-shade: #22c55e;
-    --ion-color-primary-tint: #86efac;
+    --ion-color-primary: #fb923c;
+    --ion-color-primary-rgb: 251, 146, 60;
+    --ion-color-primary-contrast: #431407;
+    --ion-color-primary-shade: #f97316;
+    --ion-color-primary-tint: #fdba74;
 
-    --ion-background-color: #0e0f0e;
-    --ion-background-color-rgb: 14, 15, 14;
-    --ion-text-color: #f4f4f5;
-    --ion-text-color-rgb: 244, 244, 245;
+    --ion-background-color: #151210;
+    --ion-background-color-rgb: 21, 18, 16;
+    --ion-text-color: #f5efe9;
+    --ion-text-color-rgb: 245, 239, 233;
 
-    --app-surface: #18191a;
-    --app-surface-2: #242526;
-    --app-muted: #a1a1aa;
+    --app-surface: #1f1b18;
+    --app-surface-2: #2b2622;
+    --app-muted: #a89f97;
     --app-border: rgba(255, 255, 255, 0.08);
   }
+}
+
+/*
+ * Un color pastel por lista (fondo, texto y barra de avance). Sale del id de la lista (ver theme/tints.ts):
+ * no se guarda, así que cambiarlo no toca datos. Si algún día se elige a mano, va como campo de la lista.
+ */
+.tint-0 { --tint-bg: #ffe8d6; --tint-ink: #8a4b25; --tint-bar: #e8590c; }
+.tint-1 { --tint-bg: #dff3e8; --tint-ink: #2f6b47; --tint-bar: #2f9e44; }
+.tint-2 { --tint-bg: #e7e5ff; --tint-ink: #4c3f8f; --tint-bar: #6741d9; }
+.tint-3 { --tint-bg: #dcecfb; --tint-ink: #1f5785; --tint-bar: #1c7ed6; }
+.tint-4 { --tint-bg: #fdf1c7; --tint-ink: #7a5a07; --tint-bar: #e0a800; }
+.tint-5 { --tint-bg: #fde2e7; --tint-ink: #8c2f45; --tint-bar: #d6336c; }
+
+@media (prefers-color-scheme: dark) {
+  .tint-0 { --tint-bg: #3a2418; --tint-ink: #f6c6a4; --tint-bar: #fb8c4a; }
+  .tint-1 { --tint-bg: #18301f; --tint-ink: #a9dfbd; --tint-bar: #51cf66; }
+  .tint-2 { --tint-bg: #26223f; --tint-ink: #c8c1f5; --tint-bar: #9775fa; }
+  .tint-3 { --tint-bg: #182a3b; --tint-ink: #a9cff2; --tint-bar: #4dabf7; }
+  .tint-4 { --tint-bg: #33290f; --tint-ink: #f2d98a; --tint-bar: #fcc419; }
+  .tint-5 { --tint-bg: #3a1d25; --tint-ink: #f5b5c4; --tint-bar: #f06595; }
 }

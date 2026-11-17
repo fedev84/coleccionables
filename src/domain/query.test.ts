@@ -51,7 +51,11 @@ describe('parseView', () => {
   it('tolera basura y valores viejos', () => {
     expect(parseView(null)).toEqual(DEFAULT_VIEW)
     expect(parseView('{roto')).toEqual(DEFAULT_VIEW)
-    expect(parseView('{"status":"want","sort":"precio","dir":"desc"}')).toEqual({ status: 'want', sort: 'name', dir: 'desc' })
+    expect(parseView('{"status":"want","sort":"precio","dir":"desc"}')).toEqual({ status: 'want', sort: 'name', dir: 'desc', layout: 'grid' })
+  })
+  it('arranca en grilla y recuerda si elegiste filas', () => {
+    expect(parseView('{"layout":"list"}').layout).toBe('list')
+    expect(parseView('{"layout":"mosaico"}').layout).toBe('grid')
   })
 })
 

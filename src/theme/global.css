@@ -1,5 +1,11 @@
 .muted { color: var(--app-muted); }
 
+/* Títulos con serif; el resto queda con la fuente del sistema. */
+ion-title, .sheet h2, .display { font-family: var(--app-font-display); font-weight: 600; letter-spacing: -0.01em; }
+ion-title { font-size: 20px; }
+ion-fab-button { --border-radius: 18px; }
+ion-searchbar { --border-radius: 14px; }
+
 ion-button, ion-segment-button { text-transform: none; letter-spacing: 0; }
 /* Ionic pone los botones del diálogo en mayúsculas con más especificidad. */
 ion-alert button.alert-button { text-transform: none; letter-spacing: 0; }

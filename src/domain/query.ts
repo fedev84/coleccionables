@@ -11,13 +11,17 @@ type Unsortable = 'url' | 'customization' | 'description'
 export type SortField = BaseSortField | Exclude<BuiltinField, Unsortable> | `x:${string}`
 export type SortDir = 'asc' | 'desc'
 
+/** Cómo se dibuja la lista: grilla de fotos (de entrada) o filas con detalle. */
+export type ListLayout = 'list' | 'grid'
+
 export interface ListView {
   status: StatusFilter
   sort: SortField
   dir: SortDir
+  layout: ListLayout
 }
 
-export const DEFAULT_VIEW: ListView = { status: 'all', sort: 'name', dir: 'asc' }
+export const DEFAULT_VIEW: ListView = { status: 'all', sort: 'name', dir: 'asc', layout: 'grid' }
 
 const UNSORTABLE: BuiltinField[] = ['url', 'customization', 'description']
 const SORTABLE_BUILTINS = BUILTIN_FIELDS.filter((f) => !UNSORTABLE.includes(f)) as Exclude<BuiltinField, Unsortable>[]
@@ -147,6 +151,7 @@ export function parseView(raw: string | null): ListView {
       status: v.status === 'have' || v.status === 'want' || v.status === 'gone' ? v.status : 'all',
       sort,
       dir: v.dir === 'desc' ? 'desc' : 'asc',
+      layout: v.layout === 'list' ? 'list' : 'grid',
     }
   } catch {
     return { ...DEFAULT_VIEW }

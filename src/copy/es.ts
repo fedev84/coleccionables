@@ -23,6 +23,8 @@ export const t = {
     shareWant: 'Compartir lo que me falta',
     shareHave: 'Compartir lo que tengo',
     shareDialog: 'Compartir',
+    asGrid: 'Ver en grilla',
+    asList: 'Ver en lista',
     shareEmpty: 'No hay nada para compartir',
     asText: 'Como texto',
     asImage: 'Como imagen (con fotos)',
@@ -38,6 +40,11 @@ export const t = {
     noValue: 'Sin dato',
     clearFilter: 'Quitar filtro',
     sortTitle: 'Ordenar por',
+    adjust: 'Ordenar y filtrar',
+    filterBy: 'Filtrar por',
+    progress: (have: number, want: number, gone = 0) =>
+      [`${have} de ${have + want}`, want ? `te ${want === 1 ? 'falta 1' : `faltan ${want}`}` : have ? 'completa' : '', gone && `${gone} tuve`]
+        .filter(Boolean).join(' · '),
     flip: 'Invertir orden',
     want: 'Falta',
     markHave: 'Ya la tengo',
