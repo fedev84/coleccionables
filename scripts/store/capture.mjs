@@ -123,7 +123,7 @@ try {
   await shot('list')
 
   // Formulario de una camiseta con foto, dorsal y precio.
-  await run(`[...document.querySelectorAll('ion-item.row')].find((r) => r.textContent.includes('Argentina')).click()`)
+  await run(`[...document.querySelectorAll('button.tile')].find((r) => r.textContent.includes('Argentina')).click()`)
   await waitFor(`!!document.querySelector('ion-modal.show-modal')`)
   await sleep(800)
   await shot('form')
@@ -131,22 +131,17 @@ try {
   await sleep(600)
 
   // Lo que falta.
-  await run(`[...document.querySelectorAll('ion-segment-button')].find((b) => b.value === 'want').click()`)
+  const status = (label) => run(`[...document.querySelectorAll('.chips .chip')].find((b) => b.textContent.startsWith('${label}')).click()`)
+  await status('Me falta')
   await shot('want')
-  await run(`[...document.querySelectorAll('ion-segment-button')].find((b) => b.value === 'all').click()`)
+  await status('Todos')
   await sleep(500)
 
-  // Elegir varias para moverlas (mantener apretado la primera, tocar las otras).
-  await run(`(async () => {
-    const rows = [...document.querySelectorAll('ion-item.row')]
-    const pick = (name) => rows.find((r) => r.textContent.includes(name))
-    const first = pick('Alemania')
-    const box = first.getBoundingClientRect()
-    const at = { bubbles: true, clientX: box.x + 150, clientY: box.y + 30, pointerId: 1 }
-    first.dispatchEvent(new PointerEvent('pointerdown', at))
-    await new Promise((r) => setTimeout(r, 600))
-    first.dispatchEvent(new PointerEvent('pointerup', at))
-    first.click()
+  // Elegir varias para moverlas (mantener apretada la primera, que en la grilla llega como contextmenu; tocar las otras).
+  await run(`(() => {
+    const tiles = [...document.querySelectorAll('button.tile')]
+    const pick = (name) => tiles.find((r) => r.textContent.includes(name))
+    pick('Alemania').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
     for (const n of ['Argentina', 'Brasil', 'Dinamarca']) pick(n).click()
   })()`)
   await shot('select')

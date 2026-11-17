@@ -400,7 +400,7 @@ async function confirmDelete() {
             :selecting="selecting"
             :selected="selected.has(i.id)"
             @select="toggleSelected(i)"
-            @open="openItem(i)"
+            @open="selecting ? toggleSelected(i) : openItem(i)"
           />
         </div>
         <ion-list v-else class="items">

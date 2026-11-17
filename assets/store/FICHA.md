@@ -117,7 +117,7 @@ Play Console → Política → **Contenido de la app**. Una sección por vez:
 - Huellas de la clave de subida (solo para verificar):
   - SHA-1: `56:60:89:E2:DC:D8:E8:D6:51:18:B4:10:DA:B7:25:25:2A:45:BA:CC`
   - SHA-256: `11:DF:CA:44:FE:2F:2B:57:A4:AF:49:61:C1:98:09:33:BB:34:DB:EB:28:E9:31:15:F1:6C:3B:B2:D2:C9:2F:35`
-- Chequeado el 2026-10-23 (1.1.0, versionCode 2); la 1.2.0 (versionCode 3, 2026-11-04) y la 1.3.0 (versionCode 4, 2026-11-12) no cambian permisos ni librerías nativas:
+- Chequeado el 2026-10-23 (1.1.0, versionCode 2); la 1.2.0 (versionCode 3, 2026-11-04) la 1.3.0 (versionCode 4, 2026-11-12) y la 1.4.0 (versionCode 5, 2026-11-17) no cambian permisos ni librerías nativas:
   - Apunta a API 36.
   - Las librerías nativas (SQLCipher del plugin de SQLite y las de la cámara) están alineadas a 16 KB, como pide Play.
   - Permisos: solo internet (lo agrega Capacitor). Se sacaron los de huella que suma el plugin de SQLite: la app no los usa.
@@ -127,14 +127,13 @@ Play Console → Política → **Contenido de la app**. Una sección por vez:
 
 - **Países:** Argentina para empezar (la app está en castellano rioplatense). Se pueden sumar después sin subir otra versión.
 - **Prueba cerrada obligatoria:** la cuenta de desarrollador es personal y nueva, así que para pasar a producción Google exige una prueba cerrada con **12 testers o más durante 14 días seguidos**. Conviene invitar unos 15. Ver la Etapa 6 de `gastos/docs/plan-publicacion-play-store.md`: es el mismo procedimiento.
-- **Notas de la versión** (1.3.0):
+- **Notas de la versión** (1.4.0):
 
 ```text
 <es-419>
-• Nuevo "Tuve": guardá lo que regalaste, vendiste o se rompió, con motivo y fecha.
-• Hasta 5 fotos por pieza, y pasalas con flechas o deslizando.
-• Borrar ahora pide confirmación y no deja rastro.
-• Al importar un backup, si algo cambió, elegís con cuál quedarte.
-• Sin repetidos: avisa si ya tenés una pieza con el mismo nombre, año y versión.
+• Nueva cara: colores cálidos y cada lista con su propio color.
+• En el inicio ves cuánto completaste de cada lista.
+• Las listas se abren en grilla de fotos (o en filas, si preferís).
+• Buscar, ordenar y filtrar, todo junto arriba; los filtros puestos siempre a la vista.
 </es-419>
 ```

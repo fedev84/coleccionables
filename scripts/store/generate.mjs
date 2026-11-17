@@ -14,9 +14,13 @@ const OUT = join(STORE, 'play')
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const url = (p) => pathToFileURL(join(STORE, p)).href
 
-// Verdes del ícono, más un par de acentos para variar entre capturas.
+// Verdes del ícono (gráfico de funciones) y los tonos cálidos de la app (capturas, desde la 1.4.0).
 const G = {
   green: ['#22c55e', '#15803d'],
+  orange: ['#fb923c', '#c2410c'],
+  violet: ['#a78bfa', '#5b21b6'],
+  rose: ['#f472b6', '#be185d'],
+  warmNight: ['#3a302a', '#151210'],
   forest: ['#16a34a', '#14532d'],
   teal: ['#14b8a6', '#0f766e'],
   sky: ['#38bdf8', '#1d4ed8'],
@@ -26,17 +30,17 @@ const G = {
 const grad = (c) => `linear-gradient(160deg, ${G[c][0]}, ${G[c][1]})`
 
 const SHOTS = [
-  { file: '01-inicio', raw: 'home', color: 'green', title: 'Toda tu colección en un lugar' },
-  { file: '02-lista', raw: 'list', color: 'teal', title: 'Con fotos y todos los detalles' },
+  { file: '01-inicio', raw: 'home', color: 'orange', title: 'Toda tu colección en un lugar' },
+  { file: '02-lista', raw: 'list', color: 'violet', title: 'Tus piezas, a la vista' },
   { file: '03-ficha', raw: 'form', color: 'sky', title: 'Cada pieza, con sus datos' },
   { file: '04-me-falta', raw: 'want', color: 'amber', title: 'Sabé siempre qué te falta' },
-  { file: '05-mover', raw: 'select', color: 'forest', title: 'Reorganizá en dos toques' },
-  { file: '06-oscuro', raw: 'dark', color: 'night', title: 'Modo oscuro incluido' },
+  { file: '05-mover', raw: 'select', color: 'rose', title: 'Reorganizá en dos toques' },
+  { file: '06-oscuro', raw: 'dark', color: 'warmNight', title: 'Modo oscuro incluido' },
 ]
 
 // Emojis de Noto (libres): los de Apple, que usaría Chrome en una Mac, no se pueden usar en la tienda.
 const base = (w, h, body, css) => `<!doctype html><html><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=block"><style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&family=Fraunces:opsz,wght@9..144,700&display=block"><style>
   * { box-sizing: border-box; margin: 0; }
   html, body { width: ${w}px; height: ${h}px; overflow: hidden; }
   body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Color Emoji', sans-serif; color: #fff; position: relative; }
@@ -53,7 +57,7 @@ const shotHtml = ({ raw, color, title }) =>
     <div class="phone"><div class="screen"><img src="${url(`raw/${raw}.png`)}"></div></div>`, `
     body { background: ${grad(color)}; }
     h1 { position: absolute; top: 110px; left: 90px; right: 90px; text-align: center;
-         font-size: 78px; line-height: 1.06; font-weight: 800; letter-spacing: -0.03em;
+         font-family: Fraunces, Georgia, serif; font-size: 78px; line-height: 1.06; font-weight: 700; letter-spacing: -0.02em;
          text-shadow: 0 4px 24px rgba(0,0,0,.18); }
     .phone { position: absolute; left: 50%; top: 400px; transform: translateX(-50%);
              width: 686px; padding: 13px; border-radius: 76px; background: #16181a;
