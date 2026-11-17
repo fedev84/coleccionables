@@ -30,6 +30,7 @@ import ItemFormSheet from '@/components/ItemFormSheet.vue'
 import ItemRow from '@/components/ItemRow.vue'
 import ItemTile from '@/components/ItemTile.vue'
 import ListFormSheet from '@/components/ListFormSheet.vue'
+import PasteListSheet from '@/components/PasteListSheet.vue'
 import PhotoViewer from '@/components/PhotoViewer.vue'
 
 const props = defineProps<{ id: string }>()
@@ -96,6 +97,7 @@ const sortLabel = computed(() => `${sortName(view.value.sort, fields.value)} (${
 
 const itemSheet = reactive({ open: false, item: null as Item | null })
 const listSheet = ref(false)
+const pasting = ref(false)
 const viewer = reactive({ open: false, photos: [] as string[], title: '' })
 
 // ---------- Elegir varios y moverlos a otra lista ----------
@@ -262,6 +264,7 @@ async function listMenu() {
     buttons: [
       { text: t.list.shareWant, handler: () => { share('want') } },
       { text: t.list.shareHave, handler: () => { share('have') } },
+      { text: t.paste.title, handler: () => { pasting.value = true } },
       ...(all.value.length ? [{ text: t.select.menu, handler: () => { startSelecting() } }] : []),
       { text: t.list.edit, handler: () => { listSheet.value = true } },
       { text: t.list.fields, handler: () => { router.push(`/lists/${l.id}/fields`) } },
@@ -430,6 +433,7 @@ async function confirmDelete() {
 
       <ItemFormSheet :open="itemSheet.open" :list="list" :item="itemSheet.item" @close="itemSheet.open = false" />
       <ListFormSheet :open="listSheet" :list="list" @close="listSheet = false" />
+      <PasteListSheet :open="pasting" :list="list" @close="pasting = false" />
       <PhotoViewer :open="viewer.open" :photos="viewer.photos" :title="viewer.title" @close="viewer.open = false" />
     </ion-content>
   </ion-page>

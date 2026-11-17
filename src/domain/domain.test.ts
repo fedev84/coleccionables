@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Item } from './models'
 import { itemLine } from './itemLine'
-import { suggest } from './suggestions'
+import { nameSuggestions, sortSizes, suggest } from './suggestions'
 import { ValidationError, normalizeUrl, parseYear, validateItem } from './validation'
 
 const base = { name: 'Boca 2014', status: 'have' as const, year: '', version: '', size: '', url: '', description: '' }
@@ -54,5 +54,24 @@ describe('suggest', () => {
     expect(suggest(['Retro', 'Tercera'], ['Titular', 'Retro'], '')).toEqual(['Retro', 'Tercera', 'Titular'])
     expect(suggest(['Tercera'], ['Titular'], 'ter')).toEqual(['Tercera'])
     expect(suggest([], ['Titular'], 'titular')).toEqual([])
+  })
+})
+
+describe('sortSizes', () => {
+  it('ordena la escala XS → XXL y deja los otros al final', () => {
+    expect(sortSizes(['L', '42', 'xs', 'XXL', 'M', 'Único', 'S'])).toEqual(['xs', 'S', 'M', 'L', 'XXL', '42', 'Único'])
+  })
+})
+
+describe('nameSuggestions', () => {
+  const names = ['Boca Juniors', 'Bélgica', 'Argentinos Juniors', 'Boca Unidos', 'River Plate']
+  it('desde 2 letras, primero los que empiezan así y después por palabra, sin tildes', () => {
+    expect(nameSuggestions(names, 'b')).toEqual([])
+    expect(nameSuggestions(names, 'bo')).toEqual(['Boca Juniors', 'Boca Unidos'])
+    expect(nameSuggestions(names, 'bel')).toEqual(['Bélgica'])
+    expect(nameSuggestions(names, 'jun')).toEqual(['Boca Juniors', 'Argentinos Juniors'])
+  })
+  it('no sugiere lo que ya está escrito entero', () => {
+    expect(nameSuggestions(names, 'river plate')).toEqual([])
   })
 })

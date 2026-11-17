@@ -115,4 +115,12 @@ export class SqliteItemRepository implements ItemRepository {
       ORDER BY COUNT(*) DESC, MAX(updated_at) DESC`, [listId])
     return rows.map((r) => r.v)
   }
+
+  async usedNames(listId: Id) {
+    const rows = await this.db.query<{ v: string }>(`
+      SELECT name AS v FROM items
+      GROUP BY name COLLATE NOCASE
+      ORDER BY SUM(list_id = ?) DESC, COUNT(*) DESC, MAX(updated_at) DESC`, [listId])
+    return rows.map((r) => r.v)
+  }
 }

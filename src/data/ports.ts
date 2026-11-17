@@ -40,6 +40,8 @@ export interface ItemRepository {
   allPhotos(): Promise<Map<Id, string[]>>
   /** Valores distintos ya usados en una columna de la lista, más usados primero. */
   usedValues(field: 'version' | 'size' | 'place', listId: Id): Promise<string[]>
+  /** Nombres distintos de todas las listas: primero los de `listId`, después los más repetidos. */
+  usedNames(listId: Id): Promise<string[]>
 }
 
 /** Key/value chico para flags de la app. */

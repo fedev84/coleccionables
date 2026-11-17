@@ -8,7 +8,7 @@ import { useListsStore } from './lists'
 export const useItemsStore = defineStore('items', () => {
   const byList = ref<Record<Id, Item[]>>({})
   /** Valores ya usados en la lista, para las sugerencias del formulario. */
-  const used = ref<{ version: string[]; size: string[]; place: string[] }>({ version: [], size: [], place: [] })
+  const used = ref<{ version: string[]; size: string[]; place: string[]; names: string[] }>({ version: [], size: [], place: [], names: [] })
   /** Todos los ítems, para la búsqueda global. null = no se cargaron. */
   const all = ref<Item[] | null>(null)
 
@@ -22,10 +22,11 @@ export const useItemsStore = defineStore('items', () => {
 
   async function loadUsed(listId: Id) {
     const s = services().items
-    const [version, size, place] = await Promise.all(
-      (['version', 'size', 'place'] as const).map((f) => s.usedValues(f, listId)),
-    )
-    used.value = { version, size, place }
+    const [[version, size, place], names] = await Promise.all([
+      Promise.all((['version', 'size', 'place'] as const).map((f) => s.usedValues(f, listId))),
+      s.usedNames(listId),
+    ])
+    used.value = { version, size, place, names }
   }
 
   /** Refresca la lista afectada, los contadores del home y la búsqueda global (si está en uso). */
@@ -40,6 +41,12 @@ export const useItemsStore = defineStore('items', () => {
   async function create(list: Collection, input: ItemInput, photo: PhotoChange) {
     await services().items.create(list, input, photo)
     await refresh(list.id)
+  }
+
+  async function createMany(list: Collection, inputs: ItemInput[]) {
+    const created = await services().items.createMany(list, inputs)
+    await refresh(list.id)
+    return created
   }
 
   async function update(list: Collection, item: Item, input: ItemInput, photo: PhotoChange) {
@@ -69,5 +76,5 @@ export const useItemsStore = defineStore('items', () => {
     await Promise.all([refresh(snapshot.to), ...from.map(load)])
   }
 
-  return { move, undoMove, byList, used, all, load, loadAll, reset, loadUsed, create, update, setStatus, remove }
+  return { move, undoMove, byList, used, all, load, loadAll, reset, loadUsed, create, createMany, update, setStatus, remove }
 })

@@ -2,7 +2,7 @@ import type { CollectionRepository, ItemRepository } from '@/data/ports'
 import { MAX_PHOTOS, type Collection, type Id, type Item, type ItemInput, type ItemStatus, type PhotoSet } from '@/domain/models'
 import { newId, nowIso } from '@/domain/ids'
 import { ValidationError, today, validateItem } from '@/domain/validation'
-import { findClash, identityLabel } from '@/domain/identity'
+import { findClash, identityKey, identityLabel } from '@/domain/identity'
 import { planMove } from '@/domain/move'
 import type { FieldConfig } from '@/domain/fields'
 
@@ -59,6 +59,25 @@ export class ItemService {
     return item
   }
 
+  /**
+   * Varias de una vez ("Pegar una lista"), en una sola escritura. Las que ya están en la lista
+   * (o se repiten entre sí) se saltean en vez de cortar todo: la vista previa ya las mostró.
+   */
+  async createMany(list: Collection, inputs: ItemInput[]): Promise<Item[]> {
+    const ts = nowIso()
+    const taken = new Set((await this.items.byList(list.id)).map(identityKey))
+    const created: Item[] = []
+    for (const input of inputs) {
+      const clean = validateItem(input, list.fields.custom)
+      const key = identityKey(clean)
+      if (taken.has(key)) continue
+      taken.add(key)
+      created.push({ ...clean, id: newId(), listId: list.id, thumb: null, createdAt: ts, updatedAt: ts })
+    }
+    await this.items.saveMany(created.map((item) => ({ item })))
+    return created
+  }
+
   async update(list: Collection, existing: Item, input: ItemInput, photo: PhotoChange): Promise<Item> {
     const clean = validateItem(input, list.fields.custom)
     await this.assertUnique(clean, existing.listId, existing.id)
@@ -107,6 +126,10 @@ export class ItemService {
 
   usedValues(field: 'version' | 'size' | 'place', listId: Id) {
     return this.items.usedValues(field, listId)
+  }
+
+  usedNames(listId: Id) {
+    return this.items.usedNames(listId)
   }
 }
 

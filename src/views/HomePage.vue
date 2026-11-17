@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {
   IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonList,
-  IonPage, IonReorder, IonReorderGroup, IonSearchbar, IonTitle, IonToolbar, useIonRouter, type ReorderEndCustomEvent,
+  IonPage, IonReorder, IonReorderGroup, IonSearchbar, IonTitle, IonToolbar, actionSheetController, useIonRouter,
+  type ReorderEndCustomEvent,
 } from '@ionic/vue'
 import { add, folderOpenOutline } from 'ionicons/icons'
 import { computed, reactive, ref, watch } from 'vue'
@@ -10,6 +11,7 @@ import type { CollectionWithCounts, Item } from '@/domain/models'
 import { DEFAULT_VIEW, applyView } from '@/domain/query'
 import { defaultFields } from '@/domain/fields'
 import { useItemActions } from '@/composables/itemActions'
+import { useLongPress } from '@/composables/longPress'
 import { useItemsStore } from '@/stores/items'
 import { useListsStore } from '@/stores/lists'
 import { t } from '@/copy/es'
@@ -25,6 +27,8 @@ const items = useItemsStore()
 const router = useIonRouter()
 const { toggle, remove } = useItemActions()
 const creating = ref(false)
+/** La lista que se edita desde el menú de mantener apretado. */
+const editingList = ref<CollectionWithCounts | null>(null)
 const reordering = ref(false)
 
 // Búsqueda global: carga todos los ítems la primera vez que se escribe algo.
@@ -39,6 +43,35 @@ const itemSheet = reactive({ open: false, item: null as Item | null })
 const viewer = reactive({ open: false, photos: [] as string[], title: '' })
 
 const openList = (id: string) => router.push(`/lists/${id}`)
+
+// ---------- Mantener apretada una lista: sus opciones, sin tener que entrar ----------
+const press = useLongPress((l: CollectionWithCounts) => { if (!reordering.value) listMenu(l) })
+const tapList = (l: CollectionWithCounts) => { if (press.tapped() && !reordering.value) openList(l.id) }
+
+async function listMenu(l: CollectionWithCounts) {
+  const sheet = await actionSheetController.create({
+    header: `${l.emoji} ${l.name}`,
+    buttons: [
+      { text: t.list.edit, handler: () => { editingList.value = l } },
+      { text: t.list.fields, handler: () => { router.push(`/lists/${l.id}/fields`) } },
+      ...(lists.lists.length > 1 ? [{ text: t.home.reorderLists, handler: () => { reordering.value = true } }] : []),
+      { text: t.list.delete, role: 'destructive', handler: () => { confirmDelete(l) } },
+      { text: t.common.cancel, role: 'cancel' },
+    ],
+  })
+  await sheet.present()
+}
+
+async function confirmDelete(l: CollectionWithCounts) {
+  const sheet = await actionSheetController.create({
+    header: t.list.confirmDelete(l.name),
+    buttons: [
+      { text: t.common.delete, role: 'destructive', handler: () => { lists.remove(l.id) } },
+      { text: t.common.cancel, role: 'cancel' },
+    ],
+  })
+  await sheet.present()
+}
 const tints = computed(() => tintsOf(lists.lists))
 const progress = (l: CollectionWithCounts) => (l.have + l.want ? Math.round((l.have / (l.have + l.want)) * 100) : 0)
 
@@ -110,7 +143,8 @@ function onReorder(e: ReorderEndCustomEvent) {
               lines="none"
               :button="!reordering"
               :detail="false"
-              @click="!reordering && openList(l.id)"
+              v-bind="press.on(l)"
+              @click="tapList(l)"
             >
               <div class="card-body">
                 <div class="card-top">
@@ -138,6 +172,7 @@ function onReorder(e: ReorderEndCustomEvent) {
       </template>
 
       <ListFormSheet :open="creating" @close="creating = false" @created="(l) => openList(l.id)" />
+      <ListFormSheet :open="!!editingList" :list="editingList" @close="editingList = null" />
       <ItemFormSheet
         v-if="itemSheet.item && listOf(itemSheet.item)"
         :open="itemSheet.open"
